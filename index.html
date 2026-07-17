@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工業級熱泵主機智慧診斷與專家級解決方案系統</title>
+    <style>
+        body {
+            font-family: "Segoe UI", "Microsoft JhengHei", Arial, sans-serif;
+            background-color: #0f172a;
+            color: #f1f5f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 650px;
+            padding: 25px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.6rem;
+            color: #38bdf8;
+            margin-top: 0;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 0.95rem;
+            color: #94a3b8;
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            color: #f43f5e;
+            border-left: 4px solid #f43f5e;
+            padding-left: 8px;
+            margin: 20px 0 15px 0;
+            font-weight: bold;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 480px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 480px) {
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            margin-bottom: 6px;
+        }
+
+        select, input {
+            background-color: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            color: #f1f5f9;
+            padding: 10px 12px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus, input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+        }
+
+        button {
+            background-image: linear-gradient(135deg, #0ea5e9, #2563eb);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1.05rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: transform 0.1s, opacity 0.2s;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:hover {
+            opacity: 0.95;
+        }
+
+        .result-card {
+            background-color: #0f172a;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 25px;
+            border: 1px solid #334155;
+            display: none;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .result-title {
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .status-normal {
+            background-color: #065f46;
+            color: #34d399;
+        }
+
+        .status-warning {
+            background-color: #78350f;
+            color: #fbbf24;
+        }
+
+        .status-danger {
+            background-color: #991b1b;
+            color: #f87171;
+        }
+
+        .detail-item {
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .detail-label {
+            color: #94a3b8;
+            font-weight: bold;
+        }
+
+        .suggestion-box {
+            background-color: #1e1b4b;
+            border-left: 4px solid #818cf8;
+            padding: 12px;
+            border-radius: 4px 8px 8px 4px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+        }
+
+        .suggestion-title {
+            font-weight: bold;
+            color: #a5b4fc;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>工業級熱泵主機智慧診斷系統</h1>
+    <div class="subtitle">🔥 熱泵智慧診斷與專家級解決方案 (kg/cm² 版) 📊</div>
+
+    <div class="section-title">📊 壓力與冷媒參數</div>
+    <div class="form-grid">
+        <div class="form-group full-width">
+            <label for="refrigerant">冷媒種類</label>
+            <select id="refrigerant" onchange="updateDefaultValues()">
+                <option value="R32">R32 (高溫高效能)</option>
+                <option value="R410A">R410A (主流環保)</option>
+                <option value="R134a">R134a (中高溫系統)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="high-press">高壓壓力 (kg/cm²)</label>
+            <input type="number" id="high-press" step="0.1" placeholder="請輸入高壓">
+        </div>
+
+        <div class="form-group">
+            <label for="low-press">低壓壓力 (kg/cm²)</label>
+            <input type="number" id="low-press" step="0.1" placeholder="請輸入低壓">
+        </div>
+    </div>
+
+    <div class="section-title">⚡ 運轉與溫度數據</div>
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="current">壓縮機運轉電流 (A)</label>
+            <input type="number" id="current" step="0.1" placeholder="請輸入電流">
+        </div>
+
+        <div class="form-group">
+            <label for="env-temp">目前環境溫度 (°C)</label>
+            <input type="number" id="env-temp" step="0.1" placeholder="如：25">
+        </div>
+
+        <div class="form-group">
+            <label for="in-water">主機進水溫度 (°C)</label>
+            <input type="number" id="in-water" step="0.1" placeholder="如：45">
+        </div>
+
+        <div class="form-group">
+            <label for="out-water">主機出水溫度 (°C)</label>
+            <input type="number" id="out-water" step="0.1" placeholder="如：50">
+        </div>
+    </div>
+
+    <button onclick="diagnoseSystem()">一鍵智慧診斷系統</button>
+
+    <!-- 診斷結果區塊 -->
+    <div class="result-card" id="result-card">
+        <div class="result-header">
+            <span class="result-title">🛠️ 系統診斷報告</span>
+            <span id="status-badge" class="status-badge status-normal">運轉正常</span>
+        </div>
+        
+        <div class="detail-item">
+            <span class="detail-label">1. 溫差判定：</span>
+            <span id="temp-diff-result">--</span>
+        </div>
+
+        <div class="detail-item">
+            <span class="detail-label">2. 壓力狀態：</span>
+            <span id="press-result">--</span>
+        </div>
+
+        <div class="detail-item">
+            <span class="detail-label">3. 電流與負載：</span>
+            <span id="current-result">--</span>
+        </div>
+
+        <div class="suggestion-box">
+            <div class="suggestion-title">💡 專家級處置建議：</div>
+            <div id="expert-advice">讀取數據中...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 不同冷媒在一般工況下的合理壓力範圍 (kg/cm²)
+    const refrigerantSpecs = {
+        R32: { minLow: 7.5, maxLow: 11.5, minHigh: 24.0, maxHigh: 35.0, defaultLow: 9.0, defaultHigh: 28.0 },
+        R410A: { minLow: 7.0, maxLow: 11.0, minHigh: 23.0, maxHigh: 33.0, defaultLow: 8.5, defaultHigh: 26.0 },
+        R134a: { minLow: 2.5, maxLow: 4.5, minHigh: 11.0, maxHigh: 18.0, defaultLow: 3.5, defaultHigh: 14.5 }
+    };
+
+    function updateDefaultValues() {
+        const ref = document.getElementById("refrigerant").value;
+        const spec = refrigerantSpecs[ref];
+        document.getElementById("low-press").placeholder = `正常值約 ${spec.defaultLow}`;
+        document.getElementById("high-press").placeholder = `正常值約 ${spec.defaultHigh}`;
+    }
+
+    // 初始化預設提示值
+    updateDefaultValues();
+
+    function diagnoseSystem() {
+        const ref = document.getElementById("refrigerant").value;
+        const highPress = parseFloat(document.getElementById("high-press").value);
+        const lowPress = parseFloat(document.getElementById("low-press").value);
+        const current = parseFloat(document.getElementById("current").value);
+        const envTemp = parseFloat(document.getElementById("env-temp").value);
+        const inWater = parseFloat(document.getElementById("in-water").value);
+        const outWater = parseFloat(document.getElementById("out-water").value);
+
+        if (isNaN(highPress) || isNaN(lowPress)) {
+            alert("請務必輸入「高壓壓力」與「低壓壓力」以進行系統診斷！");
+            return;
+        }
+
+        const spec = refrigerantSpecs[ref];
+        let status = "normal"; // normal, warning, danger
+        let statusText = "系統運轉正常";
+        
+        let tempDiffText = "數據不足，無法判定溫差。";
+        let pressText = "壓力皆在合理範圍內。";
+        let currentText = "電流無異常數據。";
+        let advice = "系統目前各項指標運作優良，建議定期實施基礎水垢與外機蒸發器清洗保養即可。";
+
+        // 1. 溫差診斷 (出水 - 進水)
+        if (!isNaN(inWater) && !isNaN(outWater)) {
+            const diff = outWater - inWater;
+            if (diff <= 0) {
+                status = "danger";
+                tempDiffText = `異常！出水溫與進水溫無溫差 (${diff.toFixed(1)}°C)。主機可能未做功，或四通閥串氣、壓縮機未啟動。`;
+                advice = "請立刻檢查壓縮機是否確實啟動。若電流極低，可能為壓縮機電容損壞、過載保護跳脫；若壓縮機運轉但無溫差，高低壓無差，請確認四通閥是否卡死或串氣。";
+            } else if (diff < 2) {
+                status = "warning";
+                tempDiffText = `偏低 (${diff.toFixed(1)}°C)。系統循環水量過大，或熱交換效率差。`;
+                advice = "建議微幅調小進水水閥以降低水流量，觀察溫差是否能回到 3~5°C 正常區間。若水流無異常，需檢查殼管式熱交換器是否結垢。";
+            } else if (diff > 7) {
+                status = "warning";
+                tempDiffText = `偏高 (${diff.toFixed(1)}°C)。系統循環水量偏低，可能有水路阻塞或泵浦出力不足。`;
+                advice = "請檢查水泵轉速、過濾網（Y型過濾器）是否堵塞。高溫差容易導致高壓過高跳機，應儘快疏通水路。";
+            } else {
+                tempDiffText = `正常 (${diff.toFixed(1)}°C)。熱交換與水流量匹配良好。`;
+            }
+        }
+
+        // 2. 壓力診斷
+        let isLowPressTooLow = lowPress < spec.minLow;
+        let isLowPressTooHigh = lowPress > spec.maxLow;
+        let isHighPressTooLow = highPress < spec.minHigh;
+        let isHighPressTooHigh = highPress > spec.maxHigh;
+
+        if (isLowPressTooLow && isHighPressTooLow) {
+            status = "danger";
+            pressText = `系統整體壓力偏低 (低壓: ${lowPress} / 高壓: ${highPress} kg/cm²)。`;
+            advice = "這是典型的【冷媒洩漏】或【膨脹閥嚴重堵塞】特徵。請檢查系統銅管焊接點是否有油漬（漏油處即為漏點），並配合定量充填冷媒；如無漏點，請確認電子膨脹閥線圈是否燒毀或閥體卡死。";
+        } else if (isLowPressTooLow) {
+            status = "warning";
+            pressText = `低壓壓力偏低 (${lowPress} kg/cm²)。`;
+            advice = "可能原因為：蒸發器（外機）髒堵風量不足、外機風扇轉速過低，或電子膨脹閥開度過小。請優先使用高壓水槍清洗外機翅片，並確認風機是否運轉正常。";
+        } else if (isHighPressTooHigh) {
+            status = "danger";
+            pressText = `高壓壓力異常偏高 (${highPress} kg/cm²)，系統有高壓保護跳機風險！`;
+            advice = "可能原因為：1.水流量嚴重不足或斷水；2.殼管熱交換器（內機）結垢嚴重導熱差；3.冷媒充填過量；4.系統混入不凝性氣體（空氣）。請優先拆洗內機 Y 型過濾器，若無改善，需安排酸洗水垢或重新抽真空充填冷媒。";
+        } else if (isLowPressTooHigh) {
+            status = "warning";
+            pressText = `低壓壓力偏高 (${lowPress} kg/cm²)。`;
+            if (!isNaN(envTemp) && envTemp > 35) {
+                advice = "由於目前環境溫度偏高，低壓隨之升高屬於正常物理現象。若環溫正常但低壓偏高，請確認是否為膨脹閥開度過大、或壓縮機排氣效率下降。";
+            } else {
+                advice = "請觀察壓縮機運轉電流是否偏低。若電流低且高低壓差極小，可能為壓縮機閥片磨損或洩壓，導致壓縮效率下降。";
+            }
+        }
+
+        // 3. 電流輔助診斷
+        if (!isNaN(current)) {
+            if (current > 25 && status !== "danger") { // 假設 25A 為標準上限工業界線
+                status = "warning";
+                currentText = `運轉電流偏高 (${current} A)。主機負載大。`;
+                advice = "高電流通常與高壓過高同步出現。請立即確認是否由於水溫過高、冷媒過量或環境高溫曝曬所引起，避免壓縮機因高溫過載而燒毀。";
+            } else {
+                currentText = `運轉電流正常 (${current} A)。`;
+            }
+        }
+
+        // 統一更新狀態標籤
+        const badge = document.getElementById("status-badge");
+        badge.className = "status-badge";
+        if (status === "danger") {
+            badge.classList.add("status-danger");
+            badge.innerText = "異常警告";
+        } else if (status === "warning") {
+            badge.classList.add("status-warning");
+            badge.innerText = "注意調校";
+        } else {
+            badge.classList.add("status-normal");
+            badge.innerText = "運轉正常";
+        }
+
+        // 寫入介面
+        document.getElementById("temp-diff-result").innerText = tempDiffText;
+        document.getElementById("press-result").innerText = pressText;
+        document.getElementById("current-result").innerText = currentText;
+        document.getElementById("expert-advice").innerText = advice;
+
+        // 顯示結果卡片
+        document.getElementById("result-card").style.display = "block";
+    }
+</script>
+
+</body>
+</html>

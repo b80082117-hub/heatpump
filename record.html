@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>熱泵設備履歷與 QR 碼管理系統</title>
-    <!-- 引入 QR Code 生成與解碼庫 -->
-    <script src="https://cdnjs.cloudflare.com/src/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+    <title>碩豐熱泵系統AI履歷與二維碼管理系統</title>
+    <!-- 修正為最穩定的 QRCode 載入源 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body {
             font-family: "Segoe UI", "Microsoft JhengHei", Arial, sans-serif;
@@ -16,7 +16,7 @@
             line-height: 1.5;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
             background: #1e293b;
             padding: 25px;
@@ -34,10 +34,12 @@
         }
         h2 {
             color: #38bdf8;
-            font-size: 18px;
-            margin-top: 0;
+            font-size: 16px;
+            margin-top: 15px;
+            margin-bottom: 10px;
             border-bottom: 1px solid #475569;
-            padding-bottom: 8px;
+            padding-bottom: 5px;
+            text-transform: uppercase;
         }
         .grid-3 {
             display: grid;
@@ -45,20 +47,30 @@
             gap: 15px;
             margin-bottom: 20px;
         }
-        @media (max-width: 768px) {
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .grid-inner-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+        }
+        @media (max-width: 850px) {
             .grid-3 { grid-template-columns: 1fr; }
         }
         .form-group { margin-bottom: 12px; }
         label {
             display: block;
             font-weight: 600;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             color: #94a3b8;
             font-size: 13px;
         }
         select, input, textarea {
             width: 100%;
-            padding: 10px;
+            padding: 8px 10px;
             border: 1px solid #475569;
             border-radius: 8px;
             box-sizing: border-box;
@@ -66,7 +78,7 @@
             background-color: #0f172a;
             color: #f1f5f9;
         }
-        textarea { resize: vertical; height: 80px; }
+        textarea { resize: vertical; height: 75px; }
         .btn-group { display: flex; gap: 10px; margin-bottom: 30px; }
         button {
             flex: 1;
@@ -82,203 +94,198 @@
         .btn-export { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; }
         .btn-clear { background: #475569; color: white; }
         
-        /* 圖片上傳樣式 */
-        .preview-container {
-            margin-top: 8px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .img-preview {
-            width: 80px;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 6px;
-            border: 1px solid #475569;
-        }
+        /* 圖片上傳 */
+        .preview-container { margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .img-preview { width: 70px; height: 70px; object-fit: cover; border-radius: 6px; border: 1px solid #475569; cursor: pointer; }
 
-        /* 紀錄列表樣式 */
-        .record-card {
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            position: relative;
-        }
-        .record-header {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px dashed #334155;
-            padding-bottom: 8px;
-            margin-bottom: 10px;
-        }
+        /* 紀錄卡片 */
+        .record-card { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px; margin-bottom: 15px; position: relative; }
+        .record-header { display: flex; justify-content: space-between; border-bottom: 1px dashed #334155; padding-bottom: 8px; margin-bottom: 10px; }
         .customer-name { font-size: 16px; font-weight: bold; color: #38bdf8; }
         .record-date { color: #94a3b8; font-size: 13px; }
-        .badge {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            margin-right: 5px;
-        }
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 5px; }
         .badge-normal { background: #064e3b; color: #34d399; }
         .badge-warning { background: #78350f; color: #fbbf24; }
         .badge-danger { background: #7f1d1d; color: #fca5a5; }
-        .data-tag {
-            background: #1e293b;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-right: 5px;
-            display: inline-block;
-            margin-top: 5px;
-        }
-        .btn-delete {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #cbd5e1;
-            color: #0f172a;
-            width: 24px;
-            height: 24px;
-            padding: 0;
-            border-radius: 50%;
-            font-size: 12px;
-            line-height: 24px;
-            text-align: center;
-        }
+        .data-tag { background: #1e293b; padding: 3px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px; display: inline-block; margin-top: 4px; border: 1px solid #334155; }
+        .tag-title { color: #38bdf8; font-weight: bold; }
+        .btn-delete { position: absolute; top: 15px; right: 15px; background: #cbd5e1; color: #0f172a; width: 24px; height: 24px; padding: 0; border-radius: 50%; font-size: 12px; line-height: 24px; text-align: center; }
         
-        /* QR Code 彈出視窗樣式 */
-        .qr-section {
-            background: #1e293b;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #0284c7;
-            margin-top: 10px;
-            display: none;
-            text-align: center;
-        }
-        #qrcode-canvas {
-            display: inline-block;
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-        }
-        .filter-alert {
-            background: #0369a1;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        /* QR Code 區域 */
+        .qr-section { background: #1e293b; padding: 15px; border-radius: 8px; border: 1px solid #0284c7; margin-top: 10px; display: none; text-align: center; }
+        #qrcode-canvas { display: inline-block; background: white; padding: 10px; border-radius: 8px; margin-top: 10px; }
+        .filter-alert { background: #0369a1; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .sub-section-box { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>📝 碩豐熱泵履歷管理工作台</h1>
+    <h1>📝 碩豐熱泵系統運轉履歷AI工作台</h1>
     
-    <!-- 掃碼過濾提示 (如果有讀到網址參數) -->
+    <!-- 掃碼過濾提示 -->
     <div id="filter_notice" class="filter-alert" style="display:none;">
-        <span>🔍 目前已自動帶入設備編號：<strong id="filtered_id" style="color:#38bdf8;"></strong> 的歷史履歷</span>
-        <button style="flex:none; padding:4px 10px; font-size:12px; background:#475569; color:white;" onclick="clearFilter()">顯示全部</button>
+        <span>🔍 目前已鎖定主機編號：<strong id="filtered_id" style="color:#38bdf8;"></strong> 的專屬維修履歷</span>
+        <button style="flex:none; padding:4px 10px; font-size:12px; background:#475569; color:white;" onclick="clearFilter()">解鎖顯示全部</button>
     </div>
 
     <!-- 表單區 -->
     <div class="grid-3">
+        <!-- 欄位一：基本規格與電氣參數 -->
         <div>
-            <h2>🏢 案場基本資料</h2>
+            <h2>🏢 電氣規格</h2>
             <div class="form-group">
-                <label for="rec_customer">客戶名稱</label>
+                <label for="rec_customer">客戶/案場名稱</label>
                 <input type="text" id="rec_customer" placeholder="例如：碩豐大酒店">
             </div>
             <div class="form-group">
-                <label for="rec_model">主機型號 / 唯一編號 (用於二維碼)</label>
+                <label for="rec_model">主機型號 / 唯一編號 (QR碼核心)</label>
                 <input type="text" id="rec_model" placeholder="例如：HP-50RT-01" oninput="toggleQRBtn()">
-                <button id="qr_gen_btn" style="padding:4px; font-size:12px; margin-top:5px; background:#0284c7; color:white; display:none;" onclick="generateMachineQR()">🖨️ 生成此主機專屬二維碼貼紙</button>
+                <button id="qr_gen_btn" style="padding:4px; font-size:12px; margin-top:5px; background:#0284c7; color:white; display:none;" onclick="generateMachineQR()">🖨️ 生成此主機專屬 QR Code</button>
             </div>
-            <div class="form-group">
-                <label for="rec_ref">使用冷媒</label>
-                <select id="rec_ref">
-                    <option value="R417A">R417A</option>
-                    <option value="R32">R32</option>
-                    <option value="R410A">R410A</option>
-                    <option value="R134a">R134a</option>
-                </select>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="rec_type">熱泵型式</label>
+                    <select id="rec_type">
+                        <option value="AHP">AHP (空氣源)</option>
+                        <option value="WHP">WHP (水源型)</option>
+                        <option value="AWHP">AWHP (全效/雙源)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="rec_ref">使用冷媒</label>
+                    <select id="rec_ref">
+                        <option value="R417A">R417A</option>
+                        <option value="R32">R32</option>
+                        <option value="R410A">R410A</option>
+                        <option value="R134a">R134a</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="rec_phase">電源相數</label>
+                    <select id="rec_phase">
+                        <option value="三相">三相 (3Ø)</option>
+                        <option value="單相">單相 (1Ø)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="rec_volt">工作電壓</label>
+                    <select id="rec_volt">
+                        <option value="220V">220V</option>
+                        <option value="380V">380V</option>
+                        <option value="440V">440V</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 雙系統電流紀錄 -->
+            <div class="sub-section-box">
+                <label style="color:#38bdf8; font-weight:bold; margin-bottom:5px;">⚡ A機系統運轉電流 (A)</label>
+                <div class="grid-inner-3">
+                    <input type="number" id="curr_a_r" step="0.1" placeholder="R相">
+                    <input type="number" id="curr_a_s" step="0.1" placeholder="S相">
+                    <input type="number" id="curr_a_t" step="0.1" placeholder="T相">
+                </div>
+            </div>
+            <div class="sub-section-box">
+                <label style="color:#38bdf8; font-weight:bold; margin-bottom:5px;">⚡ B機系統運轉電流 (A)</label>
+                <div class="grid-inner-3">
+                    <input type="number" id="curr_b_r" step="0.1" placeholder="R相">
+                    <input type="number" id="curr_b_s" step="0.1" placeholder="S相">
+                    <input type="number" id="curr_b_t" step="0.1" placeholder="T相">
+                </div>
             </div>
         </div>
         
+        <!-- 欄位二：雙系統制冷/制熱壓力溫度 -->
         <div>
-            <h2>📊 現場實測數據</h2>
-            <div class="form-group">
-                <label for="rec_lp">低壓力 (kg/cm²)</label>
-                <input type="number" id="rec_lp" step="0.1">
+            <h2>📊 雙系統運轉數據巡檢</h2>
+            <div class="sub-section-box">
+                <label style="color:#a7f3d0; font-weight:bold; margin-bottom:5px;">🌀 A 系統冷媒迴路</label>
+                <div class="grid-2">
+                    <div class="form-group"><label>低壓 (kg)</label><input type="number" id="lp_a" step="0.1"></div>
+                    <div class="form-group"><label>高壓 (kg)</label><input type="number" id="hp_a" step="0.1"></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group"><label>吸氣溫 (°C)</label><input type="number" id="tsuc_a" step="0.1"></div>
+                    <div class="form-group"><label>排氣溫 (°C)</label><input type="number" id="tdis_a" step="0.1"></div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="rec_hp">高壓力 (kg/cm²)</label>
-                <input type="number" id="rec_hp" step="0.1">
+
+            <div class="sub-section-box">
+                <label style="color:#fef08a; font-weight:bold; margin-bottom:5px;">🌀 B 系統冷媒迴路</label>
+                <div class="grid-2">
+                    <div class="form-group"><label>低壓 (kg)</label><input type="number" id="lp_b" step="0.1"></div>
+                    <div class="form-group"><label>高壓 (kg)</label><input type="number" id="hp_b" step="0.1"></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group"><label>吸氣溫 (°C)</label><input type="number" id="tsuc_b" step="0.1"></div>
+                    <div class="form-group"><label>排氣溫 (°C)</label><input type="number" id="tdis_b" step="0.1"></div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="rec_tdis">壓縮機排氣溫度 (°C)</label>
-                <input type="number" id="rec_tdis" step="0.1">
+
+            <div class="sub-section-box">
+                <label style="color:#67e8f9; font-weight:bold; margin-bottom:5px;">💧 水源/側熱交換溫差</label>
+                <div class="grid-2">
+                    <div class="form-group"><label>水源入水溫 (°C)</label><input type="number" id="w_in" step="0.1"></div>
+                    <div class="form-group"><label>水源出水溫 (°C)</label><input type="number" id="w_out" step="0.1"></div>
+                </div>
             </div>
         </div>
         
+        <!-- 欄位三：照片、診斷與備註 -->
         <div>
-            <h2>📸 照片與處置備註</h2>
+            <h2>📸 現場照片與處置報告</h2>
             <div class="form-group">
-                <label for="rec_status">運轉狀態判定</label>
+                <label for="rec_status">主機整體狀態判定</label>
                 <select id="rec_status">
-                    <option value="正常">✅ 系統運轉正常</option>
-                    <option value="注意">⚠️ 需注意/局部異常</option>
-                    <option value="異常">❌ 嚴重故障/停機維修</option>
+                    <option value="正常">✅ 全機運轉正常</option>
+                    <option value="注意">⚠️ 需注意/局部異常(單系統運轉)</option>
+                    <option value="異常">❌ 嚴重故障/全面停機</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>現場故障/完工照片 (可多選)</label>
+                <label>上傳故障現場 / 完工照片 (可多選)</label>
                 <input type="file" id="rec_photo" accept="image/*" multiple onchange="previewAndCompressImages(this)">
                 <div id="photo_previews" class="preview-container"></div>
             </div>
             <div class="form-group">
-                <label for="rec_notes">維修處置說明</label>
-                <textarea id="rec_notes" placeholder="例如：更換乾燥過濾器..."></textarea>
+                <label for="rec_notes">現場檢修維修處置說明 (SOP / 更換零件紀錄)</label>
+                <textarea id="rec_notes" placeholder="例如：A機乾燥過濾器髒堵更換、補漏重新定量充填 R417A..."></textarea>
             </div>
         </div>
     </div>
     
     <!-- QR Code 顯示區 -->
     <div id="qr_container" class="qr-section">
-        <h3 style="margin-top:0; color:#38bdf8;">📲 主機專屬二維碼 (現場貼紙)</h3>
-        <p style="font-size:12px; color:#94a3b8; margin:0;">請用手機截圖列印此 QR Code 貼在主機控制箱上。<br>日後維修人員到現場直接用手機相機掃描，就能一鍵調出此主機的所有歷史紀錄！</p>
+        <h3 style="margin-top:0; color:#38bdf8;">📲 主機專屬維修履歷 QR Code</h3>
+        <p style="font-size:12px; color:#94a3b8; margin:0;">請將此二維碼列印並貼在該熱泵配電箱上。日後掃描即可自動鎖定此機台的所有歷史履歷。</p>
         <div id="qrcode-canvas"></div>
         <p id="qr_url_text" style="font-size:11px; color:#475569; word-break:break-all; margin-top:5px;"></p>
     </div>
     
     <div class="btn-group">
-        <button class="btn-save" onclick="saveRecord()">📥 儲存本次檢修紀錄</button>
-        <button class="btn-export" onclick="exportToCSV()">📊 匯出 Excel (CSV)</button>
+        <button class="btn-save" onclick="saveRecord()">📥 儲存本次巡檢紀錄</button>
+        <button class="btn-export" onclick="exportToCSV()">📊 匯出總 Excel (CSV)</button>
         <button class="btn-clear" onclick="clearForm()">重設表格</button>
     </div>
     
     <!-- 歷史紀錄列表 -->
     <h2>🗂️ 歷史檢修履歷庫 (已儲存 <span id="rec_count">0</span> 筆)</h2>
     <div class="form-group">
-        <input type="text" id="search_input" oninput="renderRecords()" placeholder="🔍 輸入關鍵字搜尋案場、型號、零件...">
+        <input type="text" id="search_input" oninput="renderRecords()" placeholder="🔍 輸入關鍵字模糊搜尋案場、型號、零件、電氣特徵...">
     </div>
     
     <div id="records_list"></div>
 </div>
 
 <script>
-    let currentBase64Photos = []; // 暫存目前壓縮好的圖片
+    let currentBase64Photos = [];
 
     window.onload = function() {
-        // 檢查網頁網址有沒有帶設備編號參數（例如 ?id=HP-01）
         const urlParams = new URLSearchParams(window.location.search);
         const deviceId = urlParams.get('id');
         if (deviceId) {
@@ -295,12 +302,10 @@
         document.getElementById("qr_gen_btn").style.display = modelVal ? "inline-block" : "none";
     }
 
-    // 處理圖片上傳與自動高壓縮（避免手機硬碟塞爆）
     function previewAndCompressImages(input) {
         const previewDiv = document.getElementById("photo_previews");
         previewDiv.innerHTML = "";
         currentBase64Photos = [];
-        
         if (!input.files) return;
 
         Array.from(input.files).forEach(file => {
@@ -308,29 +313,25 @@
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    // 壓縮圖片到最大 400 像素寬度，兼顧清晰度與容量
                     const canvas = document.createElement("canvas");
                     const max_size = 400;
-                    let width = img.width;
-                    let height = img.height;
+                    let width = img.width, height = img.height;
                     if (width > height) {
                         if (width > max_size) { height *= max_size / width; width = max_size; }
                     } else {
                         if (height > max_size) { width *= max_size / height; height = max_size; }
                     }
-                    canvas.width = width;
-                    canvas.height = height;
+                    canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext("2d");
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    // 轉成壓縮後的 Base64
                     const compressedBase64 = canvas.toDataURL("image/jpeg", 0.6);
                     currentBase64Photos.push(compressedBase64);
 
-                    // 顯示縮圖
                     const previewImg = document.createElement("img");
                     previewImg.src = compressedBase64;
                     previewImg.className = "img-preview";
+                    previewImg.onclick = function() { window.open(this.src); };
                     previewDiv.appendChild(previewImg);
                 };
                 img.src = e.target.result;
@@ -339,7 +340,7 @@
         });
     }
 
-    // 生成這台機器專屬的歷史履歷 QR Code
+    // 修正後的 QR Code 生成邏輯
     function generateMachineQR() {
         const modelId = document.getElementById("rec_model").value.trim();
         if(!modelId) return;
@@ -349,38 +350,39 @@
         qrCanvas.innerHTML = "";
         qrContainer.style.display = "block";
 
-        // 構造帶有機器編號的專屬網址
         const currentUrl = window.location.href.split('?')[0];
         const targetUrl = `${currentUrl}?id=${encodeURIComponent(modelId)}`;
         document.getElementById("qr_url_text").innerText = targetUrl;
 
-        // 生成 QR 碼
+        // 使用標準 QRCode.js 語法
         new QRCode(qrCanvas, {
             text: targetUrl,
-            width: 150,
-            height: 150,
-            colorDark : "#000000",
-            colorLight : "#ffffff"
+            width: 160,
+            height: 160,
+            colorDark : "#0f172a",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
         });
     }
 
     function clearFilter() {
         window.history.replaceState({}, document.title, window.location.pathname);
         document.getElementById("filter_notice").style.display = "none";
+        document.getElementById("rec_model").value = "";
+        toggleQRBtn();
         renderRecords();
     }
 
-    // 儲存紀錄
     function saveRecord() {
         const customer = document.getElementById("rec_customer").value.trim();
         const model = document.getElementById("rec_model").value.trim();
+        const type = document.getElementById("rec_type").value;
         const ref = document.getElementById("rec_ref").value;
-        const lp = document.getElementById("rec_lp").value;
-        const hp = document.getElementById("rec_hp").value;
-        const tdis = document.getElementById("rec_tdis").value;
+        const phase = document.getElementById("rec_phase").value;
+        const volt = document.getElementById("rec_volt").value;
         const status = document.getElementById("rec_status").value;
         const notes = document.getElementById("rec_notes").value.trim();
-        
+
         if (!customer) { alert("請填寫【客戶名稱】！"); return; }
 
         const date = new Date();
@@ -389,26 +391,27 @@
         const record = {
             id: Date.now(),
             date: dateString,
-            customer, model, ref, lp, hp, tdis, status, notes,
-            photos: currentBase64Photos // 存入壓縮照片陣列
+            customer, model, type, ref, phase, volt, status, notes,
+            cur_a: [document.getElementById("curr_a_r").value, document.getElementById("curr_a_s").value, document.getElementById("curr_a_t").value],
+            cur_b: [document.getElementById("curr_b_r").value, document.getElementById("curr_b_s").value, document.getElementById("curr_b_t").value],
+            sys_a: [document.getElementById("lp_a").value, document.getElementById("hp_a").value, document.getElementById("tsuc_a").value, document.getElementById("tdis_a").value],
+            sys_b: [document.getElementById("lp_b").value, document.getElementById("hp_b").value, document.getElementById("tsuc_b").value, document.getElementById("tdis_b").value],
+            water: [document.getElementById("w_in").value, document.getElementById("w_out").value],
+            photos: currentBase64Photos
         };
 
-        let records = JSON.parse(localStorage.getItem("hp_records_v2")) || [];
+        let records = JSON.parse(localStorage.getItem("hp_dual_records_v3")) || [];
         records.unshift(record);
-        localStorage.setItem("hp_records_v2", JSON.stringify(records));
+        localStorage.setItem("hp_dual_records_v3", JSON.stringify(records));
 
-        alert("📥 本次檢修紀錄與照片已安全存檔！");
+        alert("📥 雙系統檢修紀錄與電氣數據已安全存檔！");
         clearForm();
         renderRecords();
     }
 
     function clearForm() {
-        document.getElementById("rec_customer").value = "";
-        document.getElementById("rec_model").value = "";
-        document.getElementById("rec_lp").value = "";
-        document.getElementById("rec_hp").value = "";
-        document.getElementById("rec_tdis").value = "";
-        document.getElementById("rec_notes").value = "";
+        const inputs = document.querySelectorAll("input[type='number'], input[type='text'], textarea");
+        inputs.forEach(i => i.value = "");
         document.getElementById("rec_photo").value = "";
         document.getElementById("photo_previews").innerHTML = "";
         document.getElementById("qr_container").style.display = "none";
@@ -416,18 +419,14 @@
         toggleQRBtn();
     }
 
-    // 渲染歷史列表
     function renderRecords() {
         const recordsList = document.getElementById("records_list");
         const searchInput = document.getElementById("search_input").value.toLowerCase();
-        
-        // 優先讀取網址有沒有 QR Code 掃出來的過濾 ID
         const urlParams = new URLSearchParams(window.location.search);
         const filterId = urlParams.get('id');
 
-        let records = JSON.parse(localStorage.getItem("hp_records_v2")) || [];
+        let records = JSON.parse(localStorage.getItem("hp_dual_records_v3")) || [];
         
-        // 如果是掃 QR 碼進來的，只抓該主機的紀錄
         if (filterId) {
             records = records.filter(r => r.model && r.model.toLowerCase() === filterId.toLowerCase());
         } else if (searchInput) {
@@ -442,22 +441,16 @@
         recordsList.innerHTML = "";
 
         if (records.length === 0) {
-            recordsList.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;">無符合條件之檢修紀錄</p>`;
+            recordsList.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;">無符合條件之履歷紀錄</p>`;
             return;
         }
 
         records.forEach(r => {
-            let badgeClass = "badge-normal";
-            if (r.status === "注意") badgeClass = "badge-warning";
-            if (r.status === "異常") badgeClass = "badge-danger";
-
-            // 生成圖片 HTML
+            let badgeClass = r.status === "正常" ? "badge-normal" : (r.status === "注意" ? "badge-warning" : "badge-danger");
             let photosHTML = "";
             if (r.photos && r.photos.length > 0) {
-                photosHTML = `<div class="preview-container" style="margin-top:8px;">`;
-                r.photos.forEach(p => {
-                    photosHTML += `<img src="${p}" class="img-preview" onclick="window.open(this.src)" title="點擊放大觀看">`;
-                });
+                photosHTML = `<div class="preview-container">`;
+                r.photos.forEach(p => { photosHTML += `<img src="${p}" class="img-preview" onclick="window.open(this.src)">`; });
                 photosHTML += `</div>`;
             }
 
@@ -465,17 +458,32 @@
                 <div class="record-card">
                     <button class="btn-delete" onclick="deleteRecord(${r.id})">❌</button>
                     <div class="record-header">
-                        <span class="customer-name">🏢 ${r.customer} <span style="font-size:13px; color:#94a3b8; font-weight:normal;">(機號: ${r.model || '未填'})</span></span>
+                        <span class="customer-name">🏢 ${r.customer} <span style="font-size:13px; color:#94a3b8; font-weight:normal;">(型號機號: ${r.model || '未填'})</span></span>
                         <span class="record-date">📅 ${r.date}</span>
                     </div>
                     <div>
                         <span class="badge ${badgeClass}">${r.status}</span>
-                        <span class="data-tag">❄️ 冷媒: ${r.ref}</span>
-                        ${r.lp ? `<span class="data-tag">⬇️ 低壓: ${r.lp} kg</span>` : ''}
-                        ${r.hp ? `<span class="data-tag">⬆️ 高壓: ${r.hp} kg</span>` : ''}
-                        ${r.tdis ? `<span class="data-tag">🔥 排氣: ${r.tdis} °C</span>` : ''}
+                        <span class="data-tag"><span class="tag-title">型式:</span> ${r.type || '未填'}</span>
+                        <span class="data-tag"><span class="tag-title">冷媒:</span> ${r.ref}</span>
+                        <span class="data-tag"><span class="tag-title">規格:</span> ${r.phase || '三相'} / ${r.volt || '380V'}</span>
                     </div>
-                    <p style="margin: 10px 0 0 0; font-size:14px; color:#cbd5e1; background:#1e293b; padding:8px; border-radius:6px; white-space: pre-wrap;"><strong>處置與備註：</strong>${r.notes || '無備註說明'}</p>
+                    
+                    <div style="margin-top:8px; font-size:12px; color:#cbd5e1; display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div style="background:rgba(255,255,255,0.02); padding:6px; border-radius:4px;">
+                            <strong>🅰️ A系統：</strong>低壓 ${r.sys_a[0]||'-'}k / 高壓 ${r.sys_a[1]||'-'}k | 吸氣 ${r.sys_a[2]||'-'}°C / 排氣 ${r.sys_a[3]||'-'}°C<br>
+                            電流: R:${r.cur_a[0]||'-'}A / S:${r.cur_a[1]||'-'}A / T:${r.cur_a[2]||'-'}A
+                        </div>
+                        <div style="background:rgba(255,255,255,0.02); padding:6px; border-radius:4px;">
+                            <strong>🅱️ B系統：</strong>低壓 ${r.sys_b[0]||'-'}k / 高壓 ${r.sys_b[1]||'-'}k | 吸氣 ${r.sys_b[2]||'-'}°C / 排氣 ${r.sys_b[3]||'-'}°C<br>
+                            電流: R:${r.cur_b[0]||'-'}A / S:${r.cur_b[1]||'-'}A / T:${r.cur_b[2]||'-'}A
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top:5px;">
+                        <span class="data-tag"><span class="tag-title">💧 水源進出溫:</span> 入水 ${r.water[0]||'-'} °C / 出水 ${r.water[1]||'-'} °C</span>
+                    </div>
+
+                    <p style="margin: 8px 0; font-size:13px; color:#cbd5e1; background:#1e293b; padding:8px; border-radius:6px; white-space: pre-wrap;"><strong>處置備註：</strong>${r.notes || '無備註'}</p>
                     ${photosHTML}
                 </div>
             `;
@@ -484,27 +492,27 @@
 
     function deleteRecord(id) {
         if (confirm("確定要刪除這筆紀錄嗎？")) {
-            let records = JSON.parse(localStorage.getItem("hp_records_v2")) || [];
+            let records = JSON.parse(localStorage.getItem("hp_dual_records_v3")) || [];
             records = records.filter(r => r.id !== id);
-            localStorage.setItem("hp_records_v2", JSON.stringify(records));
+            localStorage.setItem("hp_dual_records_v3", JSON.stringify(records));
             renderRecords();
         }
     }
 
     function exportToCSV() {
-        let records = JSON.parse(localStorage.getItem("hp_records_v2")) || [];
+        let records = JSON.parse(localStorage.getItem("hp_dual_records_v3")) || [];
         if (records.length === 0) { alert("無資料可匯出！"); return; }
         let csvContent = "\uFEFF"; 
-        csvContent += "日期時間,客戶案場,設備型號,冷媒種類,實測低壓(kg),實測高壓(kg),排氣溫度(C),運轉狀態,現場維修處置說明\n";
+        csvContent += "日期,客戶案場,設備型號,熱泵型式,冷媒,電源,電壓,A低壓,A高壓,A吸氣,A排氣,A_R電流,A_S電流,A_T電流,B低壓,B高壓,B吸氣,B排氣,B_R電流,B_S電流,B_T電流,水源入水,水源出水,狀態,處置說明\n";
         records.forEach(r => {
             let safeNotes = (r.notes || "").replace(/"/g, '""').replace(/\n/g, ' ');
-            csvContent += `"${r.date}","${r.customer}","${r.model}","${r.ref}","${r.lp}","${r.hp}","${r.tdis}","${r.status}","${safeNotes}"\n`;
+            csvContent += `"${r.date}","${r.customer}","${r.model}","${r.type}","${r.ref}","${r.phase}","${r.volt}","${r.sys_a[0]}","${r.sys_a[1]}","${r.sys_a[2]}","${r.sys_a[3]}","${r.cur_a[0]}","${r.cur_a[1]}","${r.cur_a[2]}","${r.sys_b[0]}","${r.sys_b[1]}","${r.sys_b[2]}","${r.sys_b[3]}","${r.cur_b[0]}","${r.cur_b[1]}","${r.cur_b[2]}","${r.water[0]}","${r.water[1]}","${r.status}","${safeNotes}"\n`;
         });
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", `熱泵設備履歷表_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute("download", `雙系統熱泵履歷表_${new Date().toISOString().slice(0,10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

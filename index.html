@@ -174,7 +174,7 @@
 <body>
 
 <div class="container">
-    <h1>🔥 熱泵智慧診斷與專家級解決方案 (kg/cm²版)</h1>
+    <h1>🔥 碩豐熱泵智慧診斷與專家級解決方案 (kg/cm²版)</h1>
     
     <div class="grid-container">
         <!-- 左側：壓力與冷媒數據 -->
@@ -192,12 +192,12 @@
 
             <div class="form-group">
                 <label for="low_press">實測低壓側壓力 (kg/cm²)</label>
-                <input type="number" id="low_press" step="0.1" placeholder="請輸入低壓表公斤數，例如：8.5">
+                <input type="number" id="low_press" step="0.1" placeholder="請輸入低壓表公斤數，例如：4.5">
             </div>
 
             <div class="form-group">
                 <label for="high_press">實測高壓側壓力 (kg/cm²)</label>
-                <input type="number" id="high_press" step="0.1" placeholder="請輸入高壓表公斤數，例如：31.5">
+                <input type="number" id="high_press" step="0.1" placeholder="請輸入高壓表公斤數，例如：18.5">
             </div>
 
             <div class="form-group">
@@ -272,7 +272,7 @@
 <script>
 // 簡單的壓力-飽和溫度近似函數，用於估算蒸發溫度，以計算過熱度
 function estimateEvapTemp(ref, press_kg) {
-    // 壓力單位為 kg/cm2，轉換為 bar 約 * 0.98
+    // 壓力單位為 kg/cm2，轉換為 bar 約 * 0.980665
     const p = press_kg * 0.980665;
     if (p <= 0.1) return -50;
     
@@ -283,7 +283,8 @@ function estimateEvapTemp(ref, press_kg) {
         // R32與R410A壓力接近
         return 1400 / (9.8 - Math.log10(p * 1000)) - 245;
     } else if (ref === "R417A") {
-        return 1480 / (9.9 - Math.log10(p * 1000)) - 240;
+        // R417A 飽和蒸發溫度估算
+        return 1410 / (9.82 - Math.log10(p * 1000)) - 238;
     }
     return 0;
 }
@@ -342,11 +343,10 @@ function diagnoseSystem() {
     calcMetrics.innerHTML = metricsHTML;
 
     // 各冷媒性能指標邊界設定 (單位：kg/cm2)
-    // 轉換公式：MPa * 10.197 = kg/cm2
     const bounds = {
         "R32":   { lp_min: 5.1, lp_max: 9.7, hp_max: 36.7, eq_lp: 15.3, eq_hp: 18.4, max_temp: 110 },
         "R410A": { lp_min: 4.6, lp_max: 9.2, hp_max: 36.7, eq_lp: 15.3, eq_hp: 18.4, max_temp: 100 },
-        "R417A": { lp_min: 2.2, lp_max: 5.3, hp_max: 23.5, eq_lp: 8.2,  eq_hp: 10.2, max_temp: 90 },
+        "R417A": { lp_min: 2.2, lp_max: 5.3, hp_max: 23.5, eq_lp: 8.2,  eq_hp: 10.2, max_temp: 95 },
         "R134a": { lp_min: 1.2, lp_max: 3.9, hp_max: 19.9, eq_lp: 8.2,  eq_hp: 10.2, max_temp: 95 }
     };
     const bound = bounds[ref];
@@ -409,7 +409,7 @@ function diagnoseSystem() {
             </div>
             <div class="solution-step">
                 <strong>步驟 2【化學除垢清洗（溫差極小但高壓偏高時適用）】：</strong> 
-                若水泵運轉正常、過濾器無堵，但進出水溫差極小，且高壓表依然飆高，判定為冷凝器內部水側結垢（碳酸鈣沉積）。應使用專用弱酸除垢劑與循環水泵，對板式/套管熱交換器進行 2 ~ 3 小時的反向化學循環沖洗。
+                若水泵運轉正常、過濾器無堵，但進出水溫差極小，且高壓表依然飆高，判定為冷凝器內部水側結垢。應使用專用弱酸除垢劑與循環水泵，對板式/套管熱交換器進行 2 ~ 3 小時的反向化學循環沖洗。
             </div>
             <div class="solution-step">
                 <strong>步驟 3【不凝結氣體與過量冷媒排除】：</strong> 
@@ -475,8 +475,8 @@ function diagnoseSystem() {
         <div class="solution-step">
             <strong>日常維護方案：</strong>
             <ul>
-                <li><strong>水路定期排砂：</strong> 每月手動清理循環水系統的 Y 型過濾器一次，避免結垢前兆。</li>
-                <li><strong>翅片除塵保養：</strong> 對於空氣源主機，每季度應使用高壓噴霧器對蒸發器進行除塵清洗，保持通風。</li>
+                <li><strong>水路定期檢查：</strong> 每月手動清理循環水系統的 Y 型過濾器一次，避免結垢前兆。</li>
+                <li><strong>鰭片除塵保養：</strong> 對於空氣源主機，每季度應使用高壓噴霧器對蒸發器進行除塵清洗，保持通風。</li>
                 <li><strong>運轉數據存檔：</strong> 建議在每季巡檢時，將「高壓、低壓、排氣溫度、運轉電流」記錄存檔，以便進行設備生命週期之效能劣化趨勢預測。</li>
             </ul>
         </div>`;
@@ -484,4 +484,4 @@ function diagnoseSystem() {
 </script>
 
 </body>
-</html> 
+</html>

@@ -59,7 +59,7 @@
     <h1>📝 碩豐熱泵AI診斷與履歷平台</h1>
     
     <div id="filter_notice" class="filter-alert" style="display:none;">
-        <span>🔍 目前已鎖定主機編號：<strong id="filtered_id" style="color:#38bdf8;"></strong> 的專屬維修履歷</span>
+        <span>🔍 目前已鎖定主機編號：<strong id="filtered_id" style="color:#38bdf8;"></strong> 的專專維修履歷</span>
         <button style="flex:none; padding:4px 10px; font-size:12px; background:#475569; color:white;" onclick="clearFilter()">解鎖顯示全部</button>
     </div>
 
@@ -263,7 +263,7 @@
         new QRCode(qrCanvas, { text: targetUrl, width: 160, height: 160, colorDark: "#0f172a", colorLight: "#ffffff" });
     }
 
-    // ========== 升級版：系統專家級智慧診斷引擎 ==========
+    // ========== 系統專家級智慧診斷引擎 ==========
     function runSmartDiagnosis() {
         const ref = document.getElementById("rec_ref").value;
         const phase = document.getElementById("rec_phase").value;
@@ -277,7 +277,7 @@
         let totalIssues = 0;
 
         function analyzeSystem(sysName, lpStr, hpStr, tsucStr, tdisStr, curRStr, curSStr, curTStr) {
-            if (!lpStr && !hpStr && !tsucStr && !tdisStr) return; // 該系統無數據則跳過
+            if (!lpStr && !hpStr && !tsucStr && !tdisStr) return; 
 
             let lp = parseFloat(lpStr), hp = parseFloat(hpStr);
             let tsuc = parseFloat(tsucStr), tdis = parseFloat(tdisStr);
@@ -287,7 +287,7 @@
             if(!isNaN(hp) && hp > hp_high_threshold) {
                 sysIssues.push({ err: `高壓過高 (${hp} kg/cm²)`, sol: "檢查熱水流量是否不足、冷凝器是否結垢、或系統內冷媒充填過多。" });
             }
-            // 2. 複合式冷媒與系統判斷 (引進過熱度與排氣複合邏輯)
+            // 2. 複合式冷媒與系統判斷
             if(!isNaN(lp) && lp < lp_low_threshold) {
                 if (!isNaN(tdis) && tdis > 90) {
                     sysIssues.push({ err: `低壓過低且排氣偏高 (低壓: ${lp} kg/cm², 排氣: ${tdis} °C)`, sol: "典型冷媒洩漏系統缺冷媒，或膨脹閥開度過小/冰堵。請進行系統探漏。" });
@@ -351,7 +351,7 @@
             }
         }
 
-        // 6. 水源側換熱判斷 (僅限水源型 WHP / AWHP 觸發防呆)
+        // 6. 水源側換熱判斷 (僅限水源型 WHP / AWHP)
         if (type === "WHP" || type === "AWHP") {
             let w_in = parseFloat(document.getElementById("w_in").value);
             let w_out = parseFloat(document.getElementById("w_out").value);
@@ -412,24 +412,37 @@
             photos: currentBase64Photos
         };
 
+        // 1. 先儲存至本地端，確保現場巡檢不丟失
         let records = JSON.parse(localStorage.getItem("hp_ai_records_v5")) || [];
         records.unshift(record);
         localStorage.setItem("hp_ai_records_v5", JSON.stringify(records));
 
+        // 2. 雲端同步
         if (CLOUD_API_URL && !CLOUD_API_URL.includes("XXXXXX")) {
+            console.log("開始同步至雲端，網址:", CLOUD_API_URL);
+            
             fetch(CLOUD_API_URL, {
                 method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "text/plain;charset=utf-8" }, 
                 body: JSON.stringify(record)
             })
-            .then(() => console.log("雲端同步成功"))
-            .catch(err => console.error("雲端同步失敗:", err));
+            .then(response => {
+                console.log("收到雲端回應:", response);
+                alert("📥 巡檢數據已成功存檔，並成功同步至 Google 雲端試算表！");
+                clearForm(); 
+                renderRecords();
+            })
+            .catch(err => {
+                console.error("同步失敗原因:", err);
+                alert("💾 巡檢數據已儲存在「本地歷史履歷」，但同步到 Google 雲端試算表失敗！\n(請確認手機網路，或檢查 GAS 後端部署是否正常)");
+                clearForm(); 
+                renderRecords();
+            });
+        } else {
+            alert("📥 資料已成功存至本地端（未偵測到有效的雲端同步網址）。");
+            clearForm(); 
+            renderRecords();
         }
-
-        alert("📥 巡檢數據已成功存檔，並自動同步至 Google 雲端試算表！");
-        clearForm(); 
-        renderRecords();
     }
 
     function clearForm() {

@@ -65,13 +65,13 @@
 
     <!-- 表單區 -->
     <div class="grid-3">
-        <!-- 欄位一：基本規格與電氣 -->
+        <!-- 欄位一 -->
         <div>
             <h2>🏢 案場與電氣規格</h2>
             <div class="form-group"><label>客戶/案場名稱</label><input type="text" id="rec_customer" placeholder="例如：碩豐大酒店"></div>
             <div class="form-group">
                 <label>主機型號 / 唯一編號</label>
-                <input type="text" id="rec_model" placeholder="例如：HP-50RT-01" oninput="toggleQRBtn()">
+                <input type="text" id="rec_model" placeholder="請輸入編號" oninput="toggleQRBtn()">
                 <button id="qr_gen_btn" style="padding:4px; font-size:12px; margin-top:5px; background:#0284c7; color:white; display:none;" onclick="generateMachineQR()">🖨️ 生成專屬 QR Code</button>
             </div>
             <div class="grid-2">
@@ -102,7 +102,7 @@
             </div>
         </div>
         
-        <!-- 欄位二：壓力與溫度 -->
+        <!-- 欄位二 -->
         <div>
             <h2>📊 運轉數據 (用於診斷)</h2>
             <div class="sub-section-box">
@@ -127,9 +127,8 @@
                     <div class="form-group"><label>排氣溫 (°C)</label><input type="number" id="tdis_b" step="0.1"></div>
                 </div>
             </div>
-            <!-- 水路系統 -->
             <div class="sub-section-box">
-                <label style="color:#f43f5e; font-weight:bold;">🔥 熱水側水溫 (冷凝加熱)</label>
+                <label style="color:#f43f5e; font-weight:bold;">🔥 熱水側水溫</label>
                 <div class="grid-2">
                     <div class="form-group"><label>熱水入水溫 (°C)</label><input type="number" id="h_in" step="0.1" placeholder="進主機"></div>
                     <div class="form-group"><label>熱水出水溫 (°C)</label><input type="number" id="h_out" step="0.1" placeholder="出主機"></div>
@@ -144,19 +143,20 @@
             </div>
         </div>
         
-        <!-- 欄位三：照片與診斷結果 -->
+        <!-- 欄位三 -->
         <div>
             <h2>📸 處置與報告</h2>
             <div class="form-group">
                 <label>主機整體狀態判定</label>
                 <select id="rec_status">
                     <option value="正常">✅ 全機運轉正常</option>
-                    <option value="注意">⚠️ 需注意/局部異常(單機運轉)</option>
+                    <option value="注意">⚠️ 需注意/局部異常</option>
                     <option value="異常">❌ 嚴重故障/全面停機</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>上傳現場照片 (可多選)</label>
+                <label>上傳現場照片 (支援同步多張上傳)</label>
+                <!-- 確保有多選屬性 -->
                 <input type="file" id="rec_photo" accept="image/*" multiple onchange="previewAndCompressImages(this)">
                 <div id="photo_previews" class="preview-container"></div>
             </div>
@@ -182,7 +182,7 @@
     
     <div class="btn-group">
         <button class="btn-diagnose" onclick="runSmartDiagnosis()">🤖 執行專家級智慧診斷分析</button>
-        <button class="btn-save" onclick="saveRecord()">📥 儲存本次巡檢與診斷紀錄</button>
+        <button class="btn-save" id="save_btn" onclick="saveRecord()">📥 儲存本次巡檢與診斷紀錄</button>
         <button class="btn-export" onclick="exportToCSV()">📊 匯出總 Excel (CSV)</button>
         <button class="btn-clear" onclick="clearForm()">重設表格</button>
     </div>
@@ -197,7 +197,7 @@
 
 <script>
     const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbycjmQjr0otxP-kJDnIMc2_9ZaSTs7YxQGT37HiO32u-Px6c2C0LHBgCA3w4gpx9w4Llg/exec";
-    let currentBase64Photos = [];
+    let currentBase64Photos = []; // 儲存多張照片的陣列
 
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -223,11 +223,13 @@
         section.style.display = (type === "WHP" || type === "AWHP") ? "block" : "none";
     }
 
+    // 優化：確實儲存多張照片的壓縮 Base64 資料
     function previewAndCompressImages(input) {
         const previewDiv = document.getElementById("photo_previews");
         previewDiv.innerHTML = "";
-        currentBase64Photos = [];
-        if (!input.files) return;
+        currentBase64Photos = []; 
+        if (!input.files || input.files.length === 0) return;
+        
         Array.from(input.files).forEach(file => {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -235,13 +237,15 @@
                 img.onload = function() {
                     const canvas = document.createElement("canvas");
                     let width = img.width, height = img.height;
-                    const max_size = 400;
+                    const max_size = 600; 
                     if (width > height) { if (width > max_size) { height *= max_size / width; width = max_size; } } 
                     else { if (height > max_size) { width *= max_size / height; height = max_size; } }
                     canvas.width = width; canvas.height = height;
                     canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-                    const b64 = canvas.toDataURL("image/jpeg", 0.6);
-                    currentBase64Photos.push(b64);
+                    
+                    const b64 = canvas.toDataURL("image/jpeg", 0.7);
+                    currentBase64Photos.push(b64); // 推入陣列
+                    
                     const pImg = document.createElement("img");
                     pImg.src = b64; pImg.className = "img-preview"; pImg.onclick = function(){window.open(this.src)};
                     previewDiv.appendChild(pImg);
@@ -263,16 +267,18 @@
         new QRCode(qrCanvas, { text: targetUrl, width: 160, height: 160, colorDark: "#0f172a", colorLight: "#ffffff" });
     }
 
+    // 精準化的實務熱泵智慧診斷邏輯
     function runSmartDiagnosis() {
         const ref = document.getElementById("rec_ref").value;
         const phase = document.getElementById("rec_phase").value;
         const type = document.getElementById("rec_type").value;
         
-        let hp_high_threshold = (ref === "R410A" || ref === "R32") ? 32 : 22;
-        let lp_low_threshold = (ref === "R410A" || ref === "R32") ? 6.0 : 3.5;
+        // 1. 根據冷媒動態調整高低壓基準線 (R410A/R32 壓力顯著高於 R134a/R417A)
+        let hp_upper_limit = (ref === "R410A" || ref === "R32") ? 33 : 23;
+        let lp_lower_limit = (ref === "R410A" || ref === "R32") ? 5.5 : 3.0;
 
         let issuesHTML = "";
-        let issuesText = "【AI 診斷報告】\n";
+        let issuesText = "【AI 精準診斷報告】\n";
         let totalIssues = 0;
 
         function analyzeSystem(sysName, lpStr, hpStr, tsucStr, tdisStr, curRStr, curSStr, curTStr) {
@@ -282,26 +288,38 @@
             let tsuc = parseFloat(tsucStr), tdis = parseFloat(tdisStr);
             let sysIssues = [];
             
-            if(!isNaN(hp) && hp > hp_high_threshold) {
-                sysIssues.push({ err: `高壓過高 (${hp} kg/cm²)`, sol: "檢查熱水流量是否不足、冷凝器是否結垢、或系統內冷媒充填過多。" });
-            }
-            if(!isNaN(lp) && lp < lp_low_threshold) {
-                if (!isNaN(tdis) && tdis > 90) {
-                    sysIssues.push({ err: `低壓過低且排氣偏高 (低壓: ${lp} kg/cm², 排氣: ${tdis} °C)`, sol: "典型冷媒洩漏系統缺冷媒，或膨脹閥開度過小/冰堵。請進行系統探漏。" });
-                } else {
-                    sysIssues.push({ err: `低壓過低 (${lp} kg/cm²)`, sol: "請排查吸熱側（空氣源環境溫過低/鰭片髒堵結霜；水源源側水流量不足或蒸發器換熱不良）。" });
-                }
-            }
-            if(!isNaN(tdis) && tdis > 105) {
-                sysIssues.push({ err: `排氣溫度危險 (${tdis} °C)`, sol: "壓縮機有燒毀風險！主機可能嚴重缺冷媒或壓縮比過大，請即刻停機排查。" });
+            // A. 高壓高溫判定
+            if(!isNaN(hp) && hp > hp_upper_limit) {
+                sysIssues.push({ err: `${sysName}高壓過高 (${hp} kg/cm²)`, sol: "請排查熱水循環流量不足、冷凝換熱器結垢阻力大、或系統內冷媒充填過量。" });
             }
             
+            // B. 低壓與洩漏精準比對 (考量過熱度與環境溫)
+            if(!isNaN(lp) && lp < lp_lower_limit) {
+                // 如果吸氣溫也很低，在空氣源熱泵中通常是冬天環境溫度過低引起的低壓，而非故障
+                if(type === "AHP" && !isNaN(tsuc) && tsuc < 2) {
+                    sysIssues.push({ err: `${sysName}運轉低壓偏低 (${lp} kg/cm²)，伴隨吸氣溫度低 (${tsuc}°C)`, sol: "研判為低環境溫度運轉或蒸發器鰭片結霜嚴重。請確認除霜機制是否正常啟動。" });
+                } else if (!isNaN(tdis) && tdis > 85) {
+                    // 低壓低且排氣高 -> 典型缺冷媒洩漏
+                    sysIssues.push({ err: `${sysName}低壓過低且排氣溫偏高 (低壓: ${lp} kg/cm², 排氣: ${tdis}°C)`, sol: "高度懷疑冷媒系統洩漏！請進行氣密探漏並重新充填冷媒。" });
+                } else {
+                    sysIssues.push({ err: `${sysName}低壓過低 (${lp} kg/cm²)`, sol: "請檢查膨脹閥開度（可能冰堵/髒堵）或換熱側流量/鰭片髒堵。" });
+                }
+            }
+
+            // C. 壓縮機排氣極限保護
+            if(!isNaN(tdis) && tdis > 100) {
+                sysIssues.push({ err: `${sysName}壓縮機排氣溫度過高 (${tdis}°C)`, sol: "已接近高溫保護極限！長期運轉易引發冷凍油劣化與壓縮機燒毀，請立即停機檢查膨脹閥與冷媒量。" });
+            }
+            
+            // D. 三相電流不平衡精準計算
             if (phase === "三相" && curRStr && curSStr && curTStr) {
                 let r = parseFloat(curRStr), s = parseFloat(curSStr), t = parseFloat(curTStr);
                 let avg = (r + s + t) / 3;
-                let maxDiff = Math.max(Math.abs(r-avg), Math.abs(s-avg), Math.abs(t-avg));
-                if(avg > 1.0 && (maxDiff / avg) > 0.15) {
-                    sysIssues.push({ err: `三相電流嚴重不平衡 (落差 > 15%)`, sol: `目前 R:${r}A, S:${s}A, T:${t}A。請檢查現場電源端供電電壓或壓縮機電磁接觸器接點、線圈阻值。` });
+                if(avg > 2.0) { // 排除空載或極小電流
+                    let maxDiff = Math.max(Math.abs(r-avg), Math.abs(s-avg), Math.abs(t-avg));
+                    if((maxDiff / avg) > 0.12) { // 降至 12% 提高靈敏度
+                        sysIssues.push({ err: `${sysName}三相電流不平衡率大於 12%`, sol: `目前 R:${r}A, S:${s}A, T:${t}A。請量測三相供電電壓是否不平衡，或檢查交流接觸器接點是否炭化接觸不良。` });
+                    }
                 }
             }
 
@@ -315,10 +333,11 @@
                 });
                 issuesHTML += `</div>`;
             } else {
-                issuesHTML += `<div class="diagnosis-item"><span class="diag-normal">✅ ${sysName}系統運轉數據在初步正常範圍內。</span></div>`;
+                issuesHTML += `<div class="diagnosis-item"><span class="diag-normal">✅ ${sysName}系統運轉壓力與電氣數據皆在標準範圍內。</span></div>`;
             }
         }
 
+        // 執行雙系統診斷
         analyzeSystem("A機", 
             document.getElementById("lp_a").value, document.getElementById("hp_a").value, 
             document.getElementById("tsuc_a").value, document.getElementById("tdis_a").value,
@@ -330,33 +349,36 @@
             document.getElementById("curr_b_r").value, document.getElementById("curr_b_s").value, document.getElementById("curr_b_t").value
         );
 
+        // E. 水側溫差換熱精準診斷
         let h_in = parseFloat(document.getElementById("h_in").value);
         let h_out = parseFloat(document.getElementById("h_out").value);
         if (!isNaN(h_in) && !isNaN(h_out)) {
             let h_dt = h_out - h_in;
-            if (h_dt <= 1.0) {
-                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 熱水側無顯著溫升 (ΔT=${h_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 壓縮機可能未有效壓縮（無作功）、四通閥串氣或製熱系統內完全無冷媒。</span></div>`;
-                issuesText += `[熱水系統] 無顯著溫升(ΔT=${h_dt.toFixed(1)}°C)，壓縮機未作功或串氣。\n`;
+            // 當入水溫小於 50°C 且溫差小於等於 1°C 時才判定異常（避免高水溫換熱慢的誤判）
+            if (h_dt <= 1.0 && h_in < 50) {
+                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 熱水側換熱無溫升 (ΔT=${h_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 壓縮機可能未有效作功、四通閥串氣、或製熱循環內冷媒完全漏光。</span></div>`;
+                issuesText += `[熱水水路] 水側換熱無明顯溫升，可能壓縮機未作功或串氣。\n`;
                 totalIssues++;
-            } else if (h_dt > 8.0) {
-                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 熱水側溫差過大 (ΔT=${h_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 代表循環熱水流量嚴重不足！請清理熱水管路之 Y 型過濾網、確認循環水幫浦運轉電流與管路閥門。</span></div>`;
-                issuesText += `[熱水系統] 溫差過大(ΔT=${h_dt.toFixed(1)}°C)流量不足，請清洗熱水濾網與檢查泵浦。\n`;
+            } else if (h_dt > 8.5) {
+                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 熱水側大溫差異常 (ΔT=${h_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 循環水流量嚴重偏低！請即刻清洗水路 Y 型過濾網，並確認水幫浦性能與管路閥門開度。</span></div>`;
+                issuesText += `[熱水水路] 運轉溫差過大，流量顯著不足，請清洗水路過濾網。\n`;
                 totalIssues++;
             }
         }
 
+        // 水源型水溫診斷
         if (type === "WHP" || type === "AWHP") {
             let w_in = parseFloat(document.getElementById("w_in").value);
             let w_out = parseFloat(document.getElementById("w_out").value);
             if (!isNaN(w_in) && !isNaN(w_out)) {
                 let w_dt = Math.abs(w_out - w_in);
                 if (w_dt < 1.0) {
-                    issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 水源側熱交換溫差過小 (ΔT=${w_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 蒸發器未有效吸熱。請排查冷媒側膨脹閥冰堵/卡死，或換熱管束表面嚴重髒堵結垢。</span></div>`;
-                    issuesText += `[水源系統] 換熱溫差過小(ΔT=${w_dt.toFixed(1)}°C)，蒸發器未有效吸熱。\n`;
+                    issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 水源源側無換熱溫差 (ΔT=${w_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 蒸發器未進行熱交換。請檢查膨脹閥是否損壞卡死，或換熱管束內部結垢嚴重。</span></div>`;
+                    issuesText += `[水源水路] 水源側無換熱溫差，蒸發器未作功。\n`;
                     totalIssues++;
                 } else if (w_dt > 6.0) {
-                    issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 水源側溫差過大 (ΔT=${w_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 水源側流量不足！有造成殼管式/板式蒸發器「結冰凍裂」的極高危險，請即刻確認水源泵浦與流量開關。</span></div>`;
-                    issuesText += `[水源系統] 溫差過大(ΔT=${w_dt.toFixed(1)}°C)流量嚴重不足，有凍裂高風險！\n`;
+                    issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 水源側溫差過大危險 (ΔT=${w_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 水源側流量不足！這會導致蒸發器內部結冰進而引發「冰凍損毀裂開」之巨額損失風險，請立刻調整水源泵浦！</span></div>`;
+                    issuesText += `[水源水路] 水源側溫差過大，有結冰凍裂蒸發器風險，請即刻增加水流量！\n`;
                     totalIssues++;
                 }
             }
@@ -373,8 +395,8 @@
         diagBox.style.display = "block";
 
         const notes = document.getElementById("rec_notes");
-        let currentNotes = notes.value.replace(/【AI 診斷報告】[\s\S]*?(?=\n\n|$)/, "").trim();
-        notes.value = (totalIssues > 0 ? issuesText : "【AI 診斷報告】各項運轉數據、水側換熱初步皆在正常範圍。") + (currentNotes ? "\n\n" + currentNotes : "");
+        let currentNotes = notes.value.replace(/【AI 精準診斷報告】[\s\S]*?(?=\n\n|$)/, "").trim();
+        notes.value = (totalIssues > 0 ? issuesText : "【AI 精準診斷報告】目前各系統數據及水側換熱皆表現正常。") + (currentNotes ? "\n\n" + currentNotes : "");
         
         diagBox.scrollIntoView({ behavior: "smooth", block: "center" });
     }
@@ -385,18 +407,19 @@
         const customer = document.getElementById("rec_customer").value.trim();
         if (!customer) { alert("請填寫【客戶/案場名稱】！"); return; }
         
-        // 🌟 核心修正：按下儲存時，系統自動抓取當下精準的在地台灣時間
+        const saveBtn = document.getElementById("save_btn");
+        saveBtn.disabled = true;
+        saveBtn.innerText = "⏳ 多圖雲端排隊寫入中...";
+
         const now = new Date();
-        const yyyy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0');
-        const hh = String(now.getHours()).padStart(2, '0');
-        const min = String(now.getMinutes()).padStart(2, '0');
-        const localDateStr = `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+        const localDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         
+        // 將多張照片轉換成 Apps Script 相容的「純 Base64 字串陣列」
+        const uploadedPhotosArray = currentBase64Photos.map(p => p.replace(/^data:image\/\w+;base64,/, ""));
+
         const record = {
             id: Date.now(),
-            date: localDateStr, // ⚡ 自動產生，不再依賴手動輸入或 ISO 轉換
+            date: localDateStr,
             customer, 
             model: document.getElementById("rec_model").value.trim(), 
             type: document.getElementById("rec_type").value, 
@@ -410,36 +433,39 @@
             sys_a: [document.getElementById("lp_a").value, document.getElementById("hp_a").value, document.getElementById("tsuc_a").value, document.getElementById("tdis_a").value],
             sys_b: [document.getElementById("lp_b").value, document.getElementById("hp_b").value, document.getElementById("tsuc_b").value, document.getElementById("tdis_b").value],
             water: [document.getElementById("w_in").value, document.getElementById("w_out").value, document.getElementById("h_in").value, document.getElementById("h_out").value],
-            photos: currentBase64Photos
+            photos: currentBase64Photos // 本地端 LocalStorage 留完整 DataURL 供渲染
         };
 
-        // 1. 先儲存至本地端，確保歷史履歷不遺失
-        let records = JSON.parse(localStorage.getItem("hp_ai_records_v5")) || [];
-        records.unshift(record);
-        localStorage.setItem("hp_ai_records_v5", JSON.stringify(records));
+        // 雲端同步 Payload (包含多張圖陣列)
+        const syncPayload = { ...record, photos: uploadedPhotosArray };
 
-        // 2. 雲端同步
+        let records = JSON.parse(localStorage.getItem("hp_ai_records_v6")) || [];
+        records.unshift(record);
+        localStorage.setItem("hp_ai_records_v6", JSON.stringify(records));
+
         if (CLOUD_API_URL && !CLOUD_API_URL.includes("XXXXXX")) {
-            console.log("開始同步至雲端，時間:", localDateStr);
-            
             fetch(CLOUD_API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-                body: JSON.stringify(record)
+                body: JSON.stringify(syncPayload)
             })
             .then(response => response.text())
             .then(data => {
-                alert("📥 巡檢數據已成功存檔，並成功同步至 Google 雲端試算表！");
-                clearForm(); 
-                renderRecords();
+                alert("📥 巡檢數據與多張照片已順利同步至 Google 雲端！");
+                finalizeSave();
             })
             .catch(err => {
-                alert("💾 巡檢數據已儲存在「本地歷史履歷」，但同步到 Google 雲端試算表失敗！");
-                clearForm(); 
-                renderRecords();
+                alert("💾 資料已存入本地檢修庫，但多圖雲端上傳失敗。\n請確認後端 Apps Script 的接收端是否已改用 Loop 迴圈處理 photos 陣列。");
+                finalizeSave();
             });
         } else {
-            alert("📥 資料已成功存至本地端。");
+            alert("📥 資料已成功儲存至本地端。");
+            finalizeSave();
+        }
+
+        function finalizeSave() {
+            saveBtn.disabled = false;
+            saveBtn.innerText = "📥 儲存本次巡檢與診斷紀錄";
             clearForm(); 
             renderRecords();
         }
@@ -460,7 +486,7 @@
         const list = document.getElementById("records_list");
         const searchInput = document.getElementById("search_input").value.toLowerCase();
         const filterId = new URLSearchParams(window.location.search).get('id');
-        let records = JSON.parse(localStorage.getItem("hp_ai_records_v5")) || [];
+        let records = JSON.parse(localStorage.getItem("hp_ai_records_v6")) || [];
         
         if (filterId) records = records.filter(r => r.model && r.model.toLowerCase() === filterId.toLowerCase());
         else if (searchInput) records = records.filter(r => r.customer.toLowerCase().includes(searchInput) || r.model.toLowerCase().includes(searchInput) || r.notes.toLowerCase().includes(searchInput));
@@ -470,25 +496,22 @@
 
         records.forEach(r => {
             let badge = r.status === "正常" ? "badge-normal" : (r.status === "注意" ? "badge-warning" : "badge-danger");
-            let pHTML = r.photos?.length ? `<div class="preview-container">${r.photos.map(p=>`<img src="${p}" class="img-preview" onclick="window.open(this.src)">`).join('')}</div>` : "";
             
-            // 🌟 智慧防錯防空：如果舊資料沒有 date 欄位，自動利用唯一 ID 還原出建立時間
-            let displayDate = r.date;
-            if (!displayDate && r.id) {
-                const d = new Date(r.id);
-                if(!isNaN(d.getTime())) {
-                    displayDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-                } else {
-                    displayDate = "新紀錄";
-                }
-            } else if (!displayDate) {
-                displayDate = "未知時間";
+            // 優化：迴圈生成所有照片的 HTML 節點
+            let pHTML = "";
+            if (r.photos && r.photos.length > 0) {
+                pHTML = `<div class="preview-container">` + 
+                    r.photos.map(p => {
+                        let srcStr = p.startsWith('data:') ? p : 'data:image/jpeg;base64,' + p;
+                        return `<img src="${srcStr}" class="img-preview" onclick="window.open(this.src)">`;
+                    }).join('') + 
+                `</div>`;
             }
-
+            
             list.innerHTML += `
                 <div class="record-card">
                     <button class="btn-delete" onclick="deleteRecord(${r.id})">❌</button>
-                    <div class="record-header"><span class="customer-name">🏢 ${r.customer} (機號: ${r.model||'未填'})</span><span class="record-date">📅 ${displayDate}</span></div>
+                    <div class="record-header"><span class="customer-name">🏢 ${r.customer} (機號: ${r.model||'未填'})</span><span class="record-date">📅 ${r.date}</span></div>
                     <div><span class="badge ${badge}">${r.status}</span><span class="data-tag">型式: ${r.type}</span><span class="data-tag">冷媒: ${r.ref}</span><span class="data-tag">電源: ${r.phase}/${r.volt}</span></div>
                     
                     <div style="margin-top:8px; font-size:12px; color:#cbd5e1; display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
@@ -507,18 +530,18 @@
 
     function deleteRecord(id) {
         if(confirm("確定刪除？")) {
-            localStorage.setItem("hp_ai_records_v5", JSON.stringify((JSON.parse(localStorage.getItem("hp_ai_records_v5"))||[]).filter(r => r.id !== id)));
+            localStorage.setItem("hp_ai_records_v6", JSON.stringify((JSON.parse(localStorage.getItem("hp_ai_records_v6"))||[]).filter(r => r.id !== id)));
             renderRecords();
         }
     }
 
     function exportToCSV() {
-        let records = JSON.parse(localStorage.getItem("hp_ai_records_v5")) || [];
+        let records = JSON.parse(localStorage.getItem("hp_ai_records_v6")) || [];
         if (!records.length) return alert("無資料");
         let csv = "\uFEFF日期,客戶,型號,型式,冷媒,電源,電壓,A低壓,A高壓,A吸氣,A排氣,A_R電流,A_S電流,A_T電流,B低壓,B高壓,B吸氣,B排氣,B_R電流,B_S電流,B_T電流,水源入水,水源出水,熱水入水,熱水出水,狀態,診斷與備註\n";
         records.forEach(r => csv += `"${r.date}","${r.customer}","${r.model}","${r.type}","${r.ref}","${r.phase}","${r.volt}","${r.sys_a[0]}","${r.sys_a[1]}","${r.sys_a[2]}","${r.sys_a[3]}","${r.cur_a[0]}","${r.cur_a[1]}","${r.cur_a[2]}","${r.sys_b[0]}","${r.sys_b[1]}","${r.sys_b[2]}","${r.sys_b[3]}","${r.cur_b[0]}","${r.cur_b[1]}","${r.cur_b[2]}","${r.water[0]}","${r.water[1]}","${r.water[2]}","${r.water[3]}","${r.status}","${(r.notes||"").replace(/"/g,'""')}"\n`);
         const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
-        a.download = `旗艦版熱泵智慧履歷_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+        a.download = `精準診斷版熱泵履歷_${new Date().toISOString().slice(0,10)}.csv`; a.click();
     }
 </script>
 </body>

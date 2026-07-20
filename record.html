@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>工業級熱泵雙系統履歷與二維碼管理系統</title>
+    <title>碩豐熱泵履歷與二維碼管理系統</title>
     <!-- 修正為最穩定的 QRCode 載入源 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
@@ -121,7 +121,7 @@
 <body>
 
 <div class="container">
-    <h1>📝 工業級熱泵雙系統運轉履歷工作台</h1>
+    <h1>📝 碩豐熱泵履歷</h1>
     
     <!-- 掃碼過濾提示 -->
     <div id="filter_notice" class="filter-alert" style="display:none;">
@@ -136,10 +136,10 @@
             <h2>🏢 案場與電氣規格</h2>
             <div class="form-group">
                 <label for="rec_customer">客戶/案場名稱</label>
-                <input type="text" id="rec_customer" placeholder="例如：頂豐大飯店">
+                <input type="text" id="rec_customer" placeholder="例如：碩豐大飯店">
             </div>
             <div class="form-group">
-                <label for="rec_model">主機型號 / 唯一車號 (QR碼核心)</label>
+                <label for="rec_model">主機型號 / 唯一號 (QR碼核心)</label>
                 <input type="text" id="rec_model" placeholder="例如：HP-50RT-01" oninput="toggleQRBtn()">
                 <button id="qr_gen_btn" style="padding:4px; font-size:12px; margin-top:5px; background:#0284c7; color:white; display:none;" onclick="generateMachineQR()">🖨️ 生成此主機專屬 QR Code</button>
             </div>

@@ -181,7 +181,7 @@
     </div>
     
     <div class="btn-group">
-        <button class="btn-diagnose" onclick="runSmartDiagnosis()">🤖 執行智慧診斷分析</button>
+        <button class="btn-diagnose" onclick="runSmartDiagnosis()">🤖 執行專家級智慧診斷分析</button>
         <button class="btn-save" onclick="saveRecord()">📥 儲存本次巡檢與診斷紀錄</button>
         <button class="btn-export" onclick="exportToCSV()">📊 匯出總 Excel (CSV)</button>
         <button class="btn-clear" onclick="clearForm()">重設表格</button>
@@ -385,7 +385,7 @@
         const customer = document.getElementById("rec_customer").value.trim();
         if (!customer) { alert("請填寫【客戶/案場名稱】！"); return; }
         
-        // 🌟 修正時間：手動抓取精準本地時間欄位，不再使用會導致相差8小時的 .toISOString()
+        // 🌟 核心修正：按下儲存時，系統自動抓取當下精準的在地台灣時間
         const now = new Date();
         const yyyy = now.getFullYear();
         const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -396,7 +396,7 @@
         
         const record = {
             id: Date.now(),
-            date: localDateStr, 
+            date: localDateStr, // ⚡ 自動產生，不再依賴手動輸入或 ISO 轉換
             customer, 
             model: document.getElementById("rec_model").value.trim(), 
             type: document.getElementById("rec_type").value, 
@@ -413,14 +413,14 @@
             photos: currentBase64Photos
         };
 
-        // 1. 先儲存至本地端，確保現場巡檢不丟失
+        // 1. 先儲存至本地端，確保歷史履歷不遺失
         let records = JSON.parse(localStorage.getItem("hp_ai_records_v5")) || [];
         records.unshift(record);
         localStorage.setItem("hp_ai_records_v5", JSON.stringify(records));
 
         // 2. 雲端同步
         if (CLOUD_API_URL && !CLOUD_API_URL.includes("XXXXXX")) {
-            console.log("開始同步至雲端，網址:", CLOUD_API_URL);
+            console.log("開始同步至雲端，時間:", localDateStr);
             
             fetch(CLOUD_API_URL, {
                 method: "POST",
@@ -429,19 +429,17 @@
             })
             .then(response => response.text())
             .then(data => {
-                console.log("收到雲端回應:", data);
                 alert("📥 巡檢數據已成功存檔，並成功同步至 Google 雲端試算表！");
                 clearForm(); 
                 renderRecords();
             })
             .catch(err => {
-                console.error("同步失敗原因:", err);
-                alert("💾 巡檢數據已儲存在「本地歷史履歷」，但同步到 Google 雲端試算表失敗！\n(請確認手機網路，或檢查 GAS 後端部署是否正常)");
+                alert("💾 巡檢數據已儲存在「本地歷史履歷」，但同步到 Google 雲端試算表失敗！");
                 clearForm(); 
                 renderRecords();
             });
         } else {
-            alert("📥 資料已成功存至本地端（未偵測到有效的雲端同步網址）。");
+            alert("📥 資料已成功存至本地端。");
             clearForm(); 
             renderRecords();
         }
@@ -474,10 +472,23 @@
             let badge = r.status === "正常" ? "badge-normal" : (r.status === "注意" ? "badge-warning" : "badge-danger");
             let pHTML = r.photos?.length ? `<div class="preview-container">${r.photos.map(p=>`<img src="${p}" class="img-preview" onclick="window.open(this.src)">`).join('')}</div>` : "";
             
+            // 🌟 智慧防錯防空：如果舊資料沒有 date 欄位，自動利用唯一 ID 還原出建立時間
+            let displayDate = r.date;
+            if (!displayDate && r.id) {
+                const d = new Date(r.id);
+                if(!isNaN(d.getTime())) {
+                    displayDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                } else {
+                    displayDate = "新紀錄";
+                }
+            } else if (!displayDate) {
+                displayDate = "未知時間";
+            }
+
             list.innerHTML += `
                 <div class="record-card">
                     <button class="btn-delete" onclick="deleteRecord(${r.id})">❌</button>
-                    <div class="record-header"><span class="customer-name">🏢 ${r.customer} (機號: ${r.model||'未填'})</span><span class="record-date">📅 ${r.date}</span></div>
+                    <div class="record-header"><span class="customer-name">🏢 ${r.customer} (機號: ${r.model||'未填'})</span><span class="record-date">📅 ${displayDate}</span></div>
                     <div><span class="badge ${badge}">${r.status}</span><span class="data-tag">型式: ${r.type}</span><span class="data-tag">冷媒: ${r.ref}</span><span class="data-tag">電源: ${r.phase}/${r.volt}</span></div>
                     
                     <div style="margin-top:8px; font-size:12px; color:#cbd5e1; display:grid; grid-template-columns: 1fr 1fr; gap:10px;">

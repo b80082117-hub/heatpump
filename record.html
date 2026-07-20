@@ -41,8 +41,8 @@
         
         .diagnosis-box { background: rgba(139, 92, 246, 0.1); border: 1px solid #8b5cf6; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
         .diagnosis-box h3 { color: #c4b5fd; margin-top: 0; margin-bottom: 10px; font-size: 18px; }
-        .diagnosis-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #6d28d9; }
-        .diagnosis-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .diagnosis-box .diagnosis-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #6d28d9; }
+        .diagnosis-box .diagnosis-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         .diag-title { font-weight: bold; color: #fca5a5; }
         .diag-solution { color: #a7f3d0; font-size: 13px; margin-top: 4px; display: block; }
         .diag-normal { color: #34d399; font-weight: bold; }
@@ -59,7 +59,7 @@
     <h1>📝 碩豐熱泵AI診斷與履歷平台</h1>
     
     <div id="filter_notice" class="filter-alert" style="display:none;">
-        <span>🔍 目前已鎖定主機編號：<strong id="filtered_id" style="color:#38bdf8;"></strong> 的專專維修履歷</span>
+        <span>🔍 目前已鎖定主機編號：<strong id="filtered_id" style="color:#38bdf8;"></strong> 的專屬維修履歷</span>
         <button style="flex:none; padding:4px 10px; font-size:12px; background:#475569; color:white;" onclick="clearFilter()">解鎖顯示全部</button>
     </div>
 
@@ -127,7 +127,7 @@
                     <div class="form-group"><label>排氣溫 (°C)</label><input type="number" id="tdis_b" step="0.1"></div>
                 </div>
             </div>
-            <!-- 補齊水路系統 -->
+            <!-- 水路系統 -->
             <div class="sub-section-box">
                 <label style="color:#f43f5e; font-weight:bold;">🔥 熱水側水溫 (冷凝加熱)</label>
                 <div class="grid-2">
@@ -181,7 +181,7 @@
     </div>
     
     <div class="btn-group">
-        <button class="btn-diagnose" onclick="runSmartDiagnosis()">🤖 執行專家級智慧診斷分析</button>
+        <button class="btn-diagnose" onclick="runSmartDiagnosis()">🤖 執行智慧診斷分析</button>
         <button class="btn-save" onclick="saveRecord()">📥 儲存本次巡檢與診斷紀錄</button>
         <button class="btn-export" onclick="exportToCSV()">📊 匯出總 Excel (CSV)</button>
         <button class="btn-clear" onclick="clearForm()">重設表格</button>
@@ -263,7 +263,6 @@
         new QRCode(qrCanvas, { text: targetUrl, width: 160, height: 160, colorDark: "#0f172a", colorLight: "#ffffff" });
     }
 
-    // ========== 系統專家級智慧診斷引擎 ==========
     function runSmartDiagnosis() {
         const ref = document.getElementById("rec_ref").value;
         const phase = document.getElementById("rec_phase").value;
@@ -283,11 +282,9 @@
             let tsuc = parseFloat(tsucStr), tdis = parseFloat(tdisStr);
             let sysIssues = [];
             
-            // 1. 高壓判斷
             if(!isNaN(hp) && hp > hp_high_threshold) {
                 sysIssues.push({ err: `高壓過高 (${hp} kg/cm²)`, sol: "檢查熱水流量是否不足、冷凝器是否結垢、或系統內冷媒充填過多。" });
             }
-            // 2. 複合式冷媒與系統判斷
             if(!isNaN(lp) && lp < lp_low_threshold) {
                 if (!isNaN(tdis) && tdis > 90) {
                     sysIssues.push({ err: `低壓過低且排氣偏高 (低壓: ${lp} kg/cm², 排氣: ${tdis} °C)`, sol: "典型冷媒洩漏系統缺冷媒，或膨脹閥開度過小/冰堵。請進行系統探漏。" });
@@ -295,12 +292,10 @@
                     sysIssues.push({ err: `低壓過低 (${lp} kg/cm²)`, sol: "請排查吸熱側（空氣源環境溫過低/鰭片髒堵結霜；水源源側水流量不足或蒸發器換熱不良）。" });
                 }
             }
-            // 3. 高溫排氣危險
             if(!isNaN(tdis) && tdis > 105) {
                 sysIssues.push({ err: `排氣溫度危險 (${tdis} °C)`, sol: "壓縮機有燒毀風險！主機可能嚴重缺冷媒或壓縮比過大，請即刻停機排查。" });
             }
             
-            // 4. 三相電流平衡判斷
             if (phase === "三相" && curRStr && curSStr && curTStr) {
                 let r = parseFloat(curRStr), s = parseFloat(curSStr), t = parseFloat(curTStr);
                 let avg = (r + s + t) / 3;
@@ -335,7 +330,6 @@
             document.getElementById("curr_b_r").value, document.getElementById("curr_b_s").value, document.getElementById("curr_b_t").value
         );
 
-        // 5. 熱水側水溫換熱效能判斷
         let h_in = parseFloat(document.getElementById("h_in").value);
         let h_out = parseFloat(document.getElementById("h_out").value);
         if (!isNaN(h_in) && !isNaN(h_out)) {
@@ -351,7 +345,6 @@
             }
         }
 
-        // 6. 水源側換熱判斷 (僅限水源型 WHP / AWHP)
         if (type === "WHP" || type === "AWHP") {
             let w_in = parseFloat(document.getElementById("w_in").value);
             let w_out = parseFloat(document.getElementById("w_out").value);
@@ -369,7 +362,6 @@
             }
         }
 
-        // 顯示結果判定
         const diagBox = document.getElementById("diagnosis_result");
         const statusSelect = document.getElementById("rec_status");
         
@@ -393,9 +385,18 @@
         const customer = document.getElementById("rec_customer").value.trim();
         if (!customer) { alert("請填寫【客戶/案場名稱】！"); return; }
         
+        // 🌟 修正時間：手動抓取精準本地時間欄位，不再使用會導致相差8小時的 .toISOString()
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const hh = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        const localDateStr = `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+        
         const record = {
             id: Date.now(),
-            date: new Date().toISOString().slice(0,16).replace('T',' '),
+            date: localDateStr, 
             customer, 
             model: document.getElementById("rec_model").value.trim(), 
             type: document.getElementById("rec_type").value, 
@@ -426,8 +427,9 @@
                 headers: { "Content-Type": "text/plain;charset=utf-8" }, 
                 body: JSON.stringify(record)
             })
-            .then(response => {
-                console.log("收到雲端回應:", response);
+            .then(response => response.text())
+            .then(data => {
+                console.log("收到雲端回應:", data);
                 alert("📥 巡檢數據已成功存檔，並成功同步至 Google 雲端試算表！");
                 clearForm(); 
                 renderRecords();

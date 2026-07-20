@@ -127,7 +127,7 @@
                     <div class="form-group"><label>排氣溫 (°C)</label><input type="number" id="tdis_b" step="0.1"></div>
                 </div>
             </div>
-            <!-- 補齊水路系統：分為熱水側與水源側 -->
+            <!-- 補齊水路系統 -->
             <div class="sub-section-box">
                 <label style="color:#f43f5e; font-weight:bold;">🔥 熱水側水溫 (冷凝加熱)</label>
                 <div class="grid-2">
@@ -177,7 +177,7 @@
     <div id="qr_container" class="qr-section">
         <h3 style="margin-top:0; color:#38bdf8;">📲 主機專屬維修履歷 QR Code</h3>
         <div id="qrcode-canvas"></div>
-        <p id="qr_url_text" style="font-size:11px; color:#475569; word-break:break-all; margin-top:5px("></p>
+        <p id="qr_url_text" style="font-size:11px; color:#475569; word-break:break-all; margin-top:5px;"></p>
     </div>
     
     <div class="btn-group">
@@ -196,6 +196,9 @@
 </div>
 
 <script>
+    // ✦✦✦ 雲端 API 串接設定 ✦✦✦
+    const CLOUD_API_URL = "https://script.google.com/macros/s/AKfybycjmQjr0otxP-kJDnlMc2_9ZaSTs7YxQGT37Hi032u-Px6c2C0LHBgCA3w4gpx9w4Llg/exec";
+
     let currentBase64Photos = [];
 
     window.onload = function() {
@@ -255,7 +258,7 @@
         new QRCode(qrCanvas, { text: targetUrl, width: 160, height: 160, colorDark: "#0f172a", colorLight: "#ffffff" });
     }
 
-    // ========== 專家級智慧診斷引擎 (納入熱水溫差判定) ==========
+    // ========== 專家級智慧診斷引擎 ==========
     function runSmartDiagnosis() {
         const ref = document.getElementById("rec_ref").value;
         const phase = document.getElementById("rec_phase").value;
@@ -297,7 +300,6 @@
             }
         }
 
-        // 診斷 A/B 冷媒迴路
         analyzeSystem("A機", 
             document.getElementById("lp_a").value, document.getElementById("hp_a").value, 
             document.getElementById("tsuc_a").value, document.getElementById("tdis_a").value,
@@ -309,7 +311,6 @@
             document.getElementById("curr_b_r").value, document.getElementById("curr_b_s").value, document.getElementById("curr_b_t").value
         );
 
-        // 新增：熱水側溫差診斷 (冷凝器側)
         let h_in = document.getElementById("h_in").value;
         let h_out = document.getElementById("h_out").value;
         if (h_in && h_out) {
@@ -325,7 +326,6 @@
             }
         }
 
-        // 水源側溫差診斷 (蒸發器側)
         let w_in = document.getElementById("w_in").value;
         let w_out = document.getElementById("w_out").value;
         if (w_in && w_out) {
@@ -364,10 +364,10 @@
         }
         diagBox.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-    // ==========================================
 
     function clearFilter() { window.location.href = window.location.pathname; }
 
+    // ========== 儲存紀錄與同步雲端試算表 ==========
     function saveRecord() {
         const customer = document.getElementById("rec_customer").value.trim();
         if (!customer) { alert("請填寫【客戶/案場名稱】！"); return; }
@@ -391,11 +391,30 @@
             photos: currentBase64Photos
         };
 
+        // 1. 先存入本地 LocalStorage
         let records = JSON.parse(localStorage.getItem("hp_ai_records_v5")) || [];
         records.unshift(record);
         localStorage.setItem("hp_ai_records_v5", JSON.stringify(records));
-        alert("📥 完整巡檢數據（含雙路水溫）與診斷報告已成功存檔！");
-        clearForm(); renderRecords();
+
+        // 2. 同步發送到 Google 試算表後端
+        if (CLOUD_API_URL && !CLOUD_API_URL.includes("XXXXXX")) {
+            fetch(CLOUD_API_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(record)
+            })
+            .then(() => {
+                console.log("雲端同步成功");
+            })
+            .catch(err => {
+                console.error("雲端同步失敗:", err);
+            });
+        }
+
+        alert("📥 巡檢數據已成功存檔，並自動同步至 Google 雲端試算表！");
+        clearForm(); 
+        renderRecords();
     }
 
     function clearForm() {

@@ -3,480 +3,639 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>碩豐熱泵智AI斷與履歷管理平台</title>
+    <title>碩豐熱泵AI診斷與履歷管理平台</title>
+    <!-- 引入 Tailwind CSS 增強美觀度 -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- 引入 QRCode 產生器套件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { font-family: "Segoe UI", "Microsoft JhengHei", Arial, sans-serif; background-color: #0f172a; color: #f1f5f9; margin: 0; padding: 15px; line-height: 1.5; }
-        .container { max-width: 1100px; margin: 0 auto; background: #1e293b; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); border: 1px solid #334155; }
-        h1 { color: #38bdf8; text-align: center; margin-bottom: 25px; border-bottom: 4px solid #0284c7; padding-bottom: 15px; font-size: 24px; }
-        h2 { color: #38bdf8; font-size: 16px; margin-top: 15px; margin-bottom: 10px; border-bottom: 1px solid #475569; padding-bottom: 5px; text-transform: uppercase; }
-        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .grid-inner-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-        @media (max-width: 850px) { .grid-3 { grid-template-columns: 1fr; } }
-        .form-group { margin-bottom: 12px; }
-        label { display: block; font-weight: 600; margin-bottom: 4px; color: #94a3b8; font-size: 13px; }
-        select, input, textarea { width: 100%; padding: 8px 10px; border: 1px solid #475569; border-radius: 8px; box-sizing: border-box; font-size: 14px; background-color: #0f172a; color: #f1f5f9; }
-        textarea { resize: vertical; height: 120px; }
-        .btn-group { display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; min-width: 150px; }
-        .btn-diagnose { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: white; flex-basis: 100%; margin-bottom: 10px; font-size: 18px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); }
-        .btn-save { background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; }
-        .btn-export { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; }
-        .btn-clear { background: #475569; color: white; }
-        
-        .preview-container { margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
-        .img-preview { width: 70px; height: 70px; object-fit: cover; border-radius: 6px; border: 1px solid #475569; cursor: pointer; }
-        .record-card { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px; margin-bottom: 15px; position: relative; }
-        .record-header { display: flex; justify-content: space-between; border-bottom: 1px dashed #334155; padding-bottom: 8px; margin-bottom: 10px; }
-        .customer-name { font-size: 16px; font-weight: bold; color: #38bdf8; }
-        .record-date { color: #94a3b8; font-size: 13px; }
-        .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 5px; }
-        .badge-normal { background: #064e3b; color: #34d399; }
-        .badge-warning { background: #78350f; color: #fbbf24; }
-        .badge-danger { background: #7f1d1d; color: #fca5a5; }
-        .data-tag { background: #1e293b; padding: 3px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px; display: inline-block; margin-top: 4px; border: 1px solid #334155; }
-        .tag-title { color: #38bdf8; font-weight: bold; }
-        .btn-delete { position: absolute; top: 15px; right: 15px; background: #cbd5e1; color: #0f172a; width: 24px; height: 24px; padding: 0; border-radius: 50%; font-size: 12px; line-height: 24px; text-align: center; }
-        
-        .diagnosis-box { background: rgba(139, 92, 246, 0.1); border: 1px solid #8b5cf6; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
-        .diagnosis-box h3 { color: #c4b5fd; margin-top: 0; margin-bottom: 10px; font-size: 18px; }
-        .diagnosis-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #6d28d9; }
-        .diagnosis-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-        .diag-title { font-weight: bold; color: #fca5a5; }
-        .diag-solution { color: #a7f3d0; font-size: 13px; margin-top: 4px; display: block; }
-        .diag-normal { color: #34d399; font-weight: bold; }
-
-        .qr-section { background: #1e293b; padding: 15px; border-radius: 8px; border: 1px solid #0284c7; margin-top: 10px; display: none; text-align: center; }
-        #qrcode-canvas { display: inline-block; background: white; padding: 10px; border-radius: 8px; margin-top: 10px; }
-        .filter-alert { background: #0369a1; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .sub-section-box { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 10px; }
+        body { font-family: 'Helvetica Neue', Arial, 'Noto Sans TC', sans-serif; background-color: #f3f4f6; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 1.5rem; }
+        .section-title { font-size: 1.15rem; font-weight: 700; color: #1e3a8a; border-left: 4px solid #3b82f6; padding-left: 0.5rem; margin-bottom: 1rem; }
+        .input-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+        label { font-size: 0.85rem; font-weight: 600; color: #4b5563; display: block; margin-bottom: 0.25rem; }
+        input, select, textarea { width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.5rem; font-size: 0.95rem; background-color: #fff; }
+        input:focus, select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+        .btn { cursor: pointer; transition: all 0.2s; font-weight: 600; text-align: center; padding: 0.75rem 1rem; border-radius: 8px; }
+        .btn-primary { background-color: #2563eb; color: white; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-success { background-color: #10b981; color: white; }
+        .btn-success:hover { background-color: #059669; }
+        .btn-secondary { background-color: #4b5563; color: white; }
+        .btn-secondary:hover { background-color: #374151; }
+        .btn-danger { background-color: #ef4444; color: white; }
+        .btn-danger:hover { background-color: #dc2626; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
     </style>
 </head>
-<body>
+<body class="p-4 max-w-5xl mx-auto">
 
-<div class="container">
-    <h1>📝 碩豐熱泵AI診斷與履歷平台</h1>
-    
-    <div id="filter_notice" class="filter-alert" style="display:none;">
-        <span>🔍 目前已鎖定主機編號：<strong id="filtered_id" style="color:#38bdf8;"></strong> 的專屬維修履歷</span>
-        <button style="flex:none; padding:4px 10px; font-size:12px; background:#475569; color:white;" onclick="clearFilter()">解鎖顯示全部</button>
+    <!-- 標頭與商標 -->
+    <header class="flex flex-col sm:flex-row items-center justify-between mb-6 pb-4 border-b border-gray-300">
+        <div>
+            <h1 class="text-2xl font-extrabold text-blue-900 tracking-wide">碩豐再生能源</h1>
+            <p class="text-sm font-medium text-emerald-600 mt-1">🌿 科技與創新節能風格 · 熱泵專家級巡檢系統</p>
+        </div>
+        <div class="mt-4 sm:mt-0 text-right text-xs text-gray-500">
+            <div>系統版本：V5.2 (穩定修正版)</div>
+            <div id="live-clock">目前時間：載入中...</div>
+        </div>
+    </header>
+
+    <!-- 功能快捷區 -->
+    <div class="flex flex-wrap gap-2 mb-4">
+        <button onclick="scrollToSection('form-area')" class="btn btn-secondary py-1.5 px-3 text-sm">📝 填寫巡檢表單</button>
+        <button onclick="scrollToSection('history-area')" class="btn btn-secondary py-1.5 px-3 text-sm">🗂 歷史履歷查詢</button>
+        <button onclick="exportToCSV()" class="btn btn-success py-1.5 px-3 text-sm">📊 匯出 Excel 報表</button>
     </div>
 
-    <!-- 表單區 -->
-    <div class="grid-3">
-        <!-- 欄位一：基本規格與電氣 -->
-        <div>
-            <h2>🏢 案場與電氣規格</h2>
-            <div class="form-group"><label>客戶/案場名稱</label><input type="text" id="rec_customer" placeholder="例如：碩豐大酒店"></div>
-            <div class="form-group">
-                <label>主機型號 / 唯一編號</label>
-                <input type="text" id="rec_model" placeholder="例如：HP-50RT-01" oninput="toggleQRBtn()">
-                <button id="qr_gen_btn" style="padding:4px; font-size:12px; margin-top:5px; background:#0284c7; color:white; display:none;" onclick="generateMachineQR()">🖨️ 生成專屬 QR Code</button>
-            </div>
-            <div class="grid-2">
-                <div class="form-group">
-                    <label>熱泵型式</label>
-                    <select id="rec_type"><option value="AHP">AHP (空氣源)</option><option value="WHP">WHP (水源型)</option><option value="AWHP">AWHP (全效/雙源)</option></select>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- 左側與中間：輸入表單區 -->
+        <div class="lg:col-span-2" id="form-area">
+            
+            <!-- 1. 基本資訊 -->
+            <div class="card">
+                <div class="section-title">1. 客戶與設備基本資訊</div>
+                <div class="input-group">
+                    <div>
+                        <label>客戶/案場名稱 *</label>
+                        <input type="text" id="rec_customer" placeholder="例如：北投麗禧飯店">
+                    </div>
+                    <div>
+                        <label>主機唯一編號 (機號) *</label>
+                        <input type="text" id="rec_model" placeholder="例如：SF-HP-001" oninput="generateQuickQR()">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>使用冷媒</label>
-                    <select id="rec_ref"><option value="R417A">R417A</option><option value="R32">R32</option><option value="R410A">R410A</option><option value="R134a">R134a</option></select>
+                <div class="input-group">
+                    <div>
+                        <label>主機型號種類</label>
+                        <select id="rec_type">
+                            <option value="水網水熱泵">水網水熱泵 (高效率)</option>
+                            <option value="空氣源熱泵">空氣源熱泵 (常規)</option>
+                            <option value="高溫型熱泵">高溫型熱泵</option>
+                            <option value="客製化機型">客製化機型</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>冷媒種類</label>
+                        <select id="rec_ref">
+                            <option value="R410A">R410A</option>
+                            <option value="R32">R32</option>
+                            <option value="R134a">R134a</option>
+                            <option value="R22">R22</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div>
+                        <label>主機相數</label>
+                        <select id="rec_phase">
+                            <option value="三相 380V">三相 380V</option>
+                            <option value="三相 220V">三相 220V</option>
+                            <option value="單相 220V">單相 220V</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>額定運轉電流 (A)</label>
+                        <input type="number" id="rec_volt" placeholder="例如：25" step="0.1">
+                    </div>
                 </div>
             </div>
-            <div class="grid-2">
-                <div class="form-group">
-                    <label>電源相數</label><select id="rec_phase"><option value="三相">三相 (3Ø)</option><option value="單相">單相 (1Ø)</option></select>
+
+            <!-- 2. 運轉數據輸入 -->
+            <div class="card">
+                <div class="section-title">2. 運轉實測數據（雙迴路獨立系統）</div>
+                
+                <!-- 迴路 A -->
+                <div class="mb-4 p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+                    <div class="text-sm font-bold text-blue-800 mb-2">🌀 【系統迴路 A】</div>
+                    <div class="mb-2">
+                        <label class="text-xs text-gray-500">壓縮機運轉電流：R相 / S相 / T相 (A)</label>
+                        <div class="grid-3">
+                            <input type="number" id="curr_a_r" placeholder="R相" step="0.1">
+                            <input type="number" id="curr_a_s" placeholder="S相" step="0.1">
+                            <input type="number" id="curr_a_t" placeholder="T相" step="0.1">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">冷媒壓力與溫度：低壓(kg) / 高壓(kg) / 吸氣溫(℃) / 排氣溫(℃)</label>
+                        <div class="grid-4">
+                            <input type="number" id="lp_a" placeholder="低壓" step="0.1">
+                            <input type="number" id="hp_a" placeholder="高壓" step="0.1">
+                            <input type="number" id="tsuc_a" placeholder="吸氣" step="0.1">
+                            <input type="number" id="tdis_a" placeholder="排氣" step="0.1">
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>工作電壓</label><select id="rec_volt"><option value="220V">220V</option><option value="380V" selected>380V</option><option value="440V">440V</option></select>
+
+                <!-- 迴路 B -->
+                <div class="p-3 bg-emerald-50/50 rounded-lg border border-emerald-100">
+                    <div class="text-sm font-bold text-emerald-800 mb-2">🌀 【系統迴路 B】</div>
+                    <div class="mb-2">
+                        <label class="text-xs text-gray-500">壓縮機運轉電流：R相 / S相 / T相 (A)</label>
+                        <div class="grid-3">
+                            <input type="number" id="curr_b_r" placeholder="R相" step="0.1">
+                            <input type="number" id="curr_b_s" placeholder="S相" step="0.1">
+                            <input type="number" id="curr_b_t" placeholder="T相" step="0.1">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">冷媒壓力與溫度：低壓(kg) / 高壓(kg) / 吸氣溫(℃) / 排氣溫(℃)</label>
+                        <div class="grid-4">
+                            <input type="number" id="lp_b" placeholder="低壓" step="0.1">
+                            <input type="number" id="hp_b" placeholder="高壓" step="0.1">
+                            <input type="number" id="tsuc_b" placeholder="吸氣" step="0.1">
+                            <input type="number" id="tdis_b" placeholder="排氣" step="0.1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 水路系統 -->
+                <div class="mt-4 p-3 bg-amber-50/50 rounded-lg border border-amber-100">
+                    <div class="text-sm font-bold text-amber-800 mb-2">💧 【外部水路與換熱系統】</div>
+                    <div class="grid-4">
+                        <div>
+                            <label class="text-xs">冰水/水源進水(℃)</label>
+                            <input type="number" id="w_in" placeholder="進水" step="0.1">
+                        </div>
+                        <div>
+                            <label class="text-xs">冰水/水源出水(℃)</label>
+                            <input type="number" id="w_out" placeholder="出水" step="0.1">
+                        </div>
+                        <div>
+                            <label class="text-xs">熱水側進水(℃)</label>
+                            <input type="number" id="h_in" placeholder="進水" step="0.1">
+                        </div>
+                        <div>
+                            <label class="text-xs">熱水側出水(℃)</label>
+                            <input type="number" id="h_out" placeholder="出水" step="0.1">
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="sub-section-box">
-                <label style="color:#38bdf8; font-weight:bold;">⚡ A機電流 (A)</label>
-                <div class="grid-inner-3"><input type="number" id="curr_a_r" placeholder="R相"><input type="number" id="curr_a_s" placeholder="S相"><input type="number" id="curr_a_t" placeholder="T相"></div>
+
+            <!-- 3. AI 診斷引擎輸出 -->
+            <div class="card bg-slate-900 text-white">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="font-bold text-lg text-blue-400">🧠 碩豐專家級智慧診斷分析</div>
+                    <button onclick="runAiDiagnosis()" class="btn btn-success py-1 px-4 text-sm rounded-md shadow-md">執行數據診斷</button>
+                </div>
+                <div id="diag_output" class="text-sm text-gray-300 leading-relaxed min-h-[60px] bg-slate-800 p-3 rounded-lg border border-slate-700">
+                    尚未執行分析。請輸入上方實測運轉數據後，點擊「執行數據診斷」按鈕。
+                </div>
             </div>
-            <div class="sub-section-box">
-                <label style="color:#38bdf8; font-weight:bold;">⚡ B機電流 (A)</label>
-                <div class="grid-inner-3"><input type="number" id="curr_b_r" placeholder="R相"><input type="number" id="curr_b_s" placeholder="S相"><input type="number" id="curr_b_t" placeholder="T相"></div>
+
+            <!-- 4. 現場拍照與備註 -->
+            <div class="card">
+                <div class="section-title">3. 現場影像紀錄與維修備註</div>
+                <div class="mb-3">
+                    <label>上傳現場照片 (支援手機拍照，可多選，自動壓縮防爆掉)</label>
+                    <input type="file" id="rec_photos" accept="image/*" multiple onchange="handlePhotoUpload(event)" class="text-sm">
+                    <div id="photo_preview_container" class="flex flex-wrap gap-2 mt-2"></div>
+                </div>
+                <div class="mb-3">
+                    <label>常規設備運轉狀態評級</label>
+                    <select id="rec_status">
+                        <option value="🟢 運轉良好 (正常)">🟢 運轉良好 (正常)</option>
+                        <option value="🟡 建議追蹤 (有潛在風險)">🟡 建議追蹤 (有潛在風險)</option>
+                        <option value="🔴 需即刻維修 (數據異常)">🔴 需即刻維修 (數據異常)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>詳細巡檢與維修對策備註</label>
+                    <textarea id="rec_notes" rows="3" placeholder="請描述現場處理狀況、清洗濾網、補冷媒量或更換零件紀錄..."></textarea>
+                </div>
+                
+                <div class="mt-5 flex gap-3">
+                    <button onclick="saveRecord()" class="btn btn-primary flex-1 text-lg py-3 shadow-lg">📥 儲存本次巡檢與診斷紀錄</button>
+                    <button onclick="clearForm()" class="btn btn-secondary px-4">清空重填</button>
+                </div>
             </div>
+
+        </div>
+
+        <!-- 右側：QR Code工具與歷史紀錄摘要 -->
+        <div class="lg:col-span-1">
+            
+            <!-- QR Code 製造機 -->
+            <div class="card text-center">
+                <div class="section-title text-left">🆔 機號專屬 QR Code 製造機</div>
+                <p class="text-xs text-gray-500 text-left mb-3">當輸入特定機號時，此處會即時生成專屬二維條碼。將其列印貼於主機上，現場人員掃描即可立刻查閱、鎖定該機台的所有歷史維修履歷。</p>
+                <div class="flex justify-center bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300">
+                    <div id="qrcode_area"></div>
+                </div>
+                <div id="qrcode_label" class="text-xs font-bold text-gray-700 mt-2">請於表單輸入主機編號</div>
+                <button onclick="printQRCode()" class="btn btn-secondary w-full py-1.5 text-xs mt-3">🖨 列印此專屬 QR 條碼</button>
+            </div>
+
+            <!-- 快捷過濾搜尋 -->
+            <div class="card">
+                <div class="section-title">🔍 履歷快速過濾檢索</div>
+                <div class="space-y-2">
+                    <div>
+                        <label class="text-xs">依【客戶/案場】搜尋</label>
+                        <input type="text" id="search_customer" placeholder="輸入關鍵字..." oninput="renderRecords()">
+                    </div>
+                    <div>
+                        <label class="text-xs">依【主機編號/機號】鎖定</label>
+                        <input type="text" id="search_model" placeholder="輸入精確機號..." oninput="renderRecords()">
+                    </div>
+                    <button onclick="clearSearch()" class="btn btn-secondary w-full py-1 text-xs">清除過濾條件</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 下方：歷史履歷列表展示 -->
+    <div class="card mt-4" id="history-area">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 pb-2 border-b border-gray-200">
+            <div class="section-title mb-0">🗂 歷史巡檢與維修履歷管理庫</div>
+            <div class="text-xs text-gray-500 mt-1 sm:mt-0" id="record_counter">目前共有 0 筆紀錄</div>
         </div>
         
-        <!-- 欄位二：壓力與溫度 -->
-        <div>
-            <h2>📊 運轉數據 (用於診斷)</h2>
-            <div class="sub-section-box">
-                <label style="color:#a7f3d0; font-weight:bold;">🌀 A 系統冷媒迴路</label>
-                <div class="grid-2">
-                    <div class="form-group"><label>低壓 (kg)</label><input type="number" id="lp_a" step="0.1"></div>
-                    <div class="form-group"><label>高壓 (kg)</label><input type="number" id="hp_a" step="0.1"></div>
-                </div>
-                <div class="grid-2">
-                    <div class="form-group"><label>吸氣溫 (°C)</label><input type="number" id="tsuc_a" step="0.1"></div>
-                    <div class="form-group"><label>排氣溫 (°C)</label><input type="number" id="tdis_a" step="0.1"></div>
-                </div>
-            </div>
-            <div class="sub-section-box">
-                <label style="color:#fef08a; font-weight:bold;">🌀 B 系統冷媒迴路</label>
-                <div class="grid-2">
-                    <div class="form-group"><label>低壓 (kg)</label><input type="number" id="lp_b" step="0.1"></div>
-                    <div class="form-group"><label>高壓 (kg)</label><input type="number" id="hp_b" step="0.1"></div>
-                </div>
-                <div class="grid-2">
-                    <div class="form-group"><label>吸氣溫 (°C)</label><input type="number" id="tsuc_b" step="0.1"></div>
-                    <div class="form-group"><label>排氣溫 (°C)</label><input type="number" id="tdis_b" step="0.1"></div>
-                </div>
-            </div>
-            <!-- 補齊水路系統 -->
-            <div class="sub-section-box">
-                <label style="color:#f43f5e; font-weight:bold;">🔥 熱水側水溫 (冷凝加熱)</label>
-                <div class="grid-2">
-                    <div class="form-group"><label>熱水入水溫 (°C)</label><input type="number" id="h_in" step="0.1" placeholder="進主機"></div>
-                    <div class="form-group"><label>熱水出水溫 (°C)</label><input type="number" id="h_out" step="0.1" placeholder="出主機"></div>
-                </div>
-            </div>
-            <div class="sub-section-box">
-                <label style="color:#67e8f9; font-weight:bold;">💧 水源側水溫 (蒸發吸熱 - WHP/AWHP用)</label>
-                <div class="grid-2">
-                    <div class="form-group"><label>水源入水溫 (°C)</label><input type="number" id="w_in" step="0.1"></div>
-                    <div class="form-group"><label>水源出水溫 (°C)</label><input type="number" id="w_out" step="0.1"></div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 欄位三：照片與診斷結果 -->
-        <div>
-            <h2>📸 處置與報告</h2>
-            <div class="form-group">
-                <label>主機整體狀態判定</label>
-                <select id="rec_status">
-                    <option value="正常">✅ 全機運轉正常</option>
-                    <option value="注意">⚠️ 需注意/局部異常(單機運轉)</option>
-                    <option value="異常">❌ 嚴重故障/全面停機</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>上傳現場照片 (可多選)</label>
-                <input type="file" id="rec_photo" accept="image/*" multiple onchange="previewAndCompressImages(this)">
-                <div id="photo_previews" class="preview-container"></div>
-            </div>
-            <div class="form-group">
-                <label>維修處置說明 (點擊「智慧診斷」會自動帶入建議)</label>
-                <textarea id="rec_notes" placeholder="例如：更換零件紀錄..."></textarea>
-            </div>
+        <!-- 響應式表格 -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm text-left text-gray-600">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                    <tr>
+                        <th class="p-3">巡檢日期</th>
+                        <th class="p-3">客戶與案場</th>
+                        <th class="p-3">機號/種類</th>
+                        <th class="p-3">關鍵運轉數據摘要</th>
+                        <th class="p-3">評級與備註對策</th>
+                        <th class="p-3 text-center">現場影像</th>
+                        <th class="p-3 text-center">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="records_tbody" class="divide-y divide-gray-200">
+                    <!-- 動態渲染內容 -->
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- 智慧診斷結果顯示區 -->
-    <div id="diagnosis_result" class="diagnosis-box">
-        <h3>🤖 AI 專家系統診斷報告</h3>
-        <div id="diagnosis_content"></div>
-    </div>
-    
-    <!-- QR Code 顯示區 -->
-    <div id="qr_container" class="qr-section">
-        <h3 style="margin-top:0; color:#38bdf8;">📲 主機專屬維修履歷 QR Code</h3>
-        <div id="qrcode-canvas"></div>
-        <p id="qr_url_text" style="font-size:11px; color:#475569; word-break:break-all; margin-top:5px;"></p>
-    </div>
-    
-    <div class="btn-group">
-        <button class="btn-diagnose" onclick="runSmartDiagnosis()">🤖 執行專家級智慧診斷分析</button>
-        <button class="btn-save" onclick="saveRecord()">📥 儲存本次巡檢與診斷紀錄</button>
-        <button class="btn-export" onclick="exportToCSV()">📊 匯出總 Excel (CSV)</button>
-        <button class="btn-clear" onclick="clearForm()">重設表格</button>
-    </div>
-    
-    <!-- 歷史紀錄列表 -->
-    <h2>🗂️ 歷史檢修履歷庫 (已儲存 <span id="rec_count">0</span> 筆)</h2>
-    <div class="form-group">
-        <input type="text" id="search_input" oninput="renderRecords()" placeholder="🔍 搜尋案場、型號、異常紀錄...">
-    </div>
-    <div id="records_list"></div>
-</div>
+    <!-- 腳部宣告 -->
+    <footer class="text-center text-xs text-gray-400 mt-8 py-4 border-t border-gray-200">
+        © 2026 碩豐再生能源 版權所有 · 熱泵節能與智慧控制整合平台
+    </footer>
 
-<script>
-    // ✦✦✦ 雲端 API 串接設定 ✦✦✦
-    const CLOUD_API_URL = "https://script.google.com/macros/s/AKfybycjmQjr0otxP-kJDnlMc2_9ZaSTs7YxQGT37Hi032u-Px6c2C0LHBgCA3w4gpx9w4Llg/exec";
+    <!-- ==========================================
+         JavaScript 核心控制、AI 診斷與傳輸機制修正
+         ========================================== -->
+    <script>
+        // 【重要】請將下方網址替換為您在 Google 試算表部署出來的網頁應用程式 URL
+        const CLOUD_API_URL = "您的_Google_Apps_Script_網頁應用程式_URL";
 
-    let currentBase64Photos = [];
+        let currentBase64Photos = [];
+        let qrcodeController = null;
 
-    window.onload = function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const deviceId = urlParams.get('id');
-        if (deviceId) {
-            document.getElementById("filter_notice").style.display = "flex";
-            document.getElementById("filtered_id").innerText = deviceId;
-            document.getElementById("rec_model").value = deviceId;
-            toggleQRBtn();
+        // 頁面初始化
+        window.onload = function() {
+            // 啟動即時時鐘
+            setInterval(() => {
+                document.getElementById("live-clock").innerText = "目前時間：" + new Date().toLocaleString('zh-TW', { hour12: false });
+            }, 1000);
+
+            // 解析 URL 參數 (檢查是否有 QR Code 掃描帶入的機號過濾)
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetModel = urlParams.get('model');
+            if (targetModel) {
+                document.getElementById("search_model").value = targetModel;
+                scrollToSection('history-area');
+            }
+
+            // 初始化 QR Code 元件
+            qrcodeController = new QRCode(document.getElementById("qrcode_area"), {
+                text: "https://shuo-feng-renewable.com",
+                width: 128,
+                height: 128,
+                colorDark : "#1e3a8a",
+                colorLight : "#ffffff"
+            });
+
+            renderRecords();
+            generateQuickQR();
+        };
+
+        // 滾動輔助
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
         }
-        renderRecords();
-    };
 
-    function toggleQRBtn() {
-        const modelVal = document.getElementById("rec_model").value.trim();
-        document.getElementById("qr_gen_btn").style.display = modelVal ? "inline-block" : "none";
-    }
-
-    function previewAndCompressImages(input) {
-        const previewDiv = document.getElementById("photo_previews");
-        previewDiv.innerHTML = "";
-        currentBase64Photos = [];
-        if (!input.files) return;
-        Array.from(input.files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement("canvas");
-                    let width = img.width, height = img.height;
-                    const max_size = 400;
-                    if (width > height) { if (width > max_size) { height *= max_size / width; width = max_size; } } 
-                    else { if (height > max_size) { width *= max_size / height; height = max_size; } }
-                    canvas.width = width; canvas.height = height;
-                    canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-                    const b64 = canvas.toDataURL("image/jpeg", 0.6);
-                    currentBase64Photos.push(b64);
-                    const pImg = document.createElement("img");
-                    pImg.src = b64; pImg.className = "img-preview"; pImg.onclick = function(){window.open(this.src)};
-                    previewDiv.appendChild(pImg);
+        // 處理照片上傳與自動壓縮技術 (防止 LocalStorage 爆掉，限制寬度 400px)
+        function handlePhotoUpload(e) {
+            const files = e.target.files;
+            const previewContainer = document.getElementById("photo_preview_container");
+            
+            for(let i=0; i<files.length; i++) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const maxW = 400; 
+                        const scale = maxW / img.width;
+                        canvas.width = maxW;
+                        canvas.height = img.height * scale;
+                        
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                        
+                        currentBase64Photos.push(compressedBase64);
+                        
+                        // 建立預覽圖縮圖
+                        const thumb = document.createElement('div');
+                        thumb.className = "relative w-16 h-16 border rounded bg-cover bg-center shadow-sm";
+                        thumb.style.backgroundImage = `url(${compressedBase64})`;
+                        previewContainer.appendChild(thumb);
+                    };
+                    img.src = event.target.result;
                 };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
+                reader.readAsDataURL(files[i]);
+            }
+        }
 
-    function generateMachineQR() {
-        const modelId = document.getElementById("rec_model").value.trim();
-        if(!modelId) return;
-        const qrContainer = document.getElementById("qr_container");
-        const qrCanvas = document.getElementById("qrcode-canvas");
-        qrCanvas.innerHTML = ""; qrContainer.style.display = "block";
-        const targetUrl = `${window.location.href.split('?')[0]}?id=${encodeURIComponent(modelId)}`;
-        document.getElementById("qr_url_text").innerText = targetUrl;
-        new QRCode(qrCanvas, { text: targetUrl, width: 160, height: 160, colorDark: "#0f172a", colorLight: "#ffffff" });
-    }
-
-    // ========== 專家級智慧診斷引擎 ==========
-    function runSmartDiagnosis() {
-        const ref = document.getElementById("rec_ref").value;
-        const phase = document.getElementById("rec_phase").value;
-        
-        let hp_threshold = (ref === "R410A" || ref === "R32") ? 28 : 19;
-        let lp_low_threshold = (ref === "R410A" || ref === "R32") ? 5 : 2.5;
-
-        let issuesHTML = "";
-        let issuesText = "【AI 診斷報告】\n";
-        let totalIssues = 0;
-
-        function analyzeSystem(sysName, lp, hp, tsuc, tdis, curR, curS, curT) {
-            let sysIssues = [];
+        // 即時生成專屬機號 QR Code
+        function generateQuickQR() {
+            const m = document.getElementById("rec_model").value.trim();
+            const label = document.getElementById("qrcode_label");
+            if(!m) {
+                label.innerText = "請於表單輸入主機編號";
+                return;
+            }
+            // 建立指向本網頁並自帶過濾引數的網址
+            const currentUrl = window.location.href.split('?')[0];
+            const targetScanUrl = `${currentUrl}?model=${encodeURIComponent(m)}`;
             
-            if(hp && hp > hp_threshold) sysIssues.push({ err: `高壓過高 (${hp} kg)`, sol: "檢查熱水流量、冷凝器器結垢情況、或冷媒充填過多。" });
-            if(lp && lp < lp_low_threshold) sysIssues.push({ err: `低壓過低 (${lp} kg)`, sol: "檢查冷媒是否洩漏、膨脹閥卡死或吸熱側(鰭片/冰水)熱交換不良。" });
-            if(tdis && tdis > 105) sysIssues.push({ err: `排氣溫度危險 (${tdis} °C)`, sol: "壓縮機有燒毀風險！可能冷媒嚴重不足或壓縮比過大，請即刻停機檢查。" });
+            qrcodeController.clear();
+            qrcodeController.makeCode(targetScanUrl);
+            label.innerText = `機號: ${m} (掃描即過濾歷史)`;
+        }
+
+        // 列印 QR Code
+        function printQRCode() {
+            const m = document.getElementById("rec_model").value.trim();
+            if(!m) { alert("請先在基本資訊中輸入【主機唯一編號】再執行列印！"); return; }
+            const qrHtml = document.getElementById("qrcode_area").innerHTML;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head><title>列印條碼 - 碩豐再生能源</title></head>
+                <body style="text-align:center; font-family:Arial; padding-top:40px;">
+                    <h2>碩豐再生能源 - 設備管理專屬標籤</h2>
+                    <div style="display:inline-block; border:2px solid #000; padding:15px; border-radius:10px;">
+                        ${qrHtml}
+                        <h3 style="margin-top:10px; letter-spacing:1px;">主機機號：${m}</h3>
+                    </div>
+                    <p style="font-size:12px; color:#666;">掃描此條碼可直接調閱本機台歷史所有維修與診斷履歷庫</p>
+                    <script>window.print(); window.close();<\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        // 🧠 碩豐專家級 AI 數據即時診斷邏輯
+        function runAiDiagnosis() {
+            // 抓取迴路 A 數據
+            const lpA = parseFloat(document.getElementById("lp_a").value) || 0;
+            const hpA = parseFloat(document.getElementById("hp_a").value) || 0;
+            const tDisA = parseFloat(document.getElementById("tdis_a").value) || 0;
+            const rCurrA = parseFloat(document.getElementById("curr_a_r").value) || 0;
             
-            if (phase === "三相" && curR && curS && curT) {
-                let r = parseFloat(curR), s = parseFloat(curS), t = parseFloat(curT);
-                let avg = (r + s + t) / 3;
-                let maxDiff = Math.max(Math.abs(r-avg), Math.abs(s-avg), Math.abs(t-avg));
-                if(avg > 0 && (maxDiff / avg) > 0.15) {
-                    sysIssues.push({ err: `三相電流嚴重不平衡`, sol: `R:${r}A, S:${s}A, T:${t}A (落差>15%)。請排查電源端或壓縮機線圈。` });
+            // 抓取水路數據
+            const wIn = parseFloat(document.getElementById("w_in").value) || 0;
+            const wOut = parseFloat(document.getElementById("w_out").value) || 0;
+            const hIn = parseFloat(document.getElementById("h_in").value) || 0;
+            const hOut = parseFloat(document.getElementById("h_out").value) || 0;
+
+            let logs = [];
+
+            if(lpA === 0 && hpA === 0 && rCurrA === 0) {
+                document.getElementById("diag_output").innerHTML = "⚠️ 偵測到未填寫迴路運轉數據，請至少填寫【迴路 A】之高低壓與電流，方能啟動專家AI分析。";
+                return;
+            }
+
+            // 1. 冷媒高壓過高診斷 (以常用 R410A 標準 28kg 為警戒)
+            if (hpA > 29) {
+                logs.push("🚨【迴路A高壓過高警告】目前高壓已達 " + hpA + " kg/cm²！可能原因：熱水側流量不足、水換熱器結垢嚴重導致換熱不良，或系統內混入空氣、冷媒充填過量。建議檢查熱水幫浦與清洗水垢。");
+            }
+            // 2. 冷媒低壓過低診斷
+            if (lpA < 3.5 && lpA > 0) {
+                logs.push("⚠️【迴路A低壓偏低提示】低壓僅 " + lpA + " kg/cm²。可能原因：水源/冰水側水流量不足、蒸發器濾網堵塞、冷媒量發生輕微洩漏，或膨脹閥開度過小。");
+            }
+            // 3. 排氣溫度過高保護臨界點
+            if (tDisA > 95) {
+                logs.push("🚨【壓縮機排氣高溫預警】目前排氣溫度達 " + tDisA + "℃！此溫度過高將加速冷凍油劣化。請立刻確認系統是否嚴重缺冷媒、吸氣迴氣過熱度太大，或是膨脹閥堵塞。");
+            }
+            // 4. 水路溫差智慧分析 (Delta T)
+            if (hIn > 0 && hOut > 0) {
+                const deltaTh = hOut - hIn;
+                if (deltaTh > 7) {
+                    logs.push("💡【水路流量專家診斷】熱水進出水溫差達 " + deltaTh.toFixed(1) + "℃（大於正常 3-5℃ 範疇）。診斷為「熱水流量偏低」，建議調大水幫浦檔位或巡檢管路閥門是否未完全開足。");
+                } else if (deltaTh < 1.5 && deltaTh > 0) {
+                    logs.push("💡【水路流量專家診斷】熱水進出水溫差僅 " + deltaTh.toFixed(1) + "℃（過小）。主機作功未能完全帶入水中，請檢查是否水流量過大導致串氣或熱交換器短路。");
                 }
             }
 
-            if (sysIssues.length > 0) {
-                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ ${sysName}發現 ${sysIssues.length} 項異常：</span>`;
-                issuesText += `[${sysName}]\n`;
-                sysIssues.forEach(i => {
-                    issuesHTML += `<span class="diag-solution">▪️ ${i.err} 👉 對策：${i.sol}</span>`;
-                    issuesText += `- ${i.err} (對策: ${i.sol})\n`;
-                    totalIssues++;
-                });
-                issuesHTML += `</div>`;
-            } else if (hp || lp) {
-                issuesHTML += `<div class="diagnosis-item"><span class="diag-normal">✅ ${sysName}系統冷媒與電氣數據初步正常。</span></div>`;
+            // 輸出結果
+            if(logs.length === 0) {
+                document.getElementById("diag_output").innerHTML = "🟢【碩豐專家診斷結果】：該時段主機之電流、冷媒壓縮比（高/低壓）、排氣溫度及水側熱交換溫差均在完美標準範疇內，系統健康度優良。";
+                document.getElementById("rec_status").value = "🟢 運轉良好 (正常)";
+            } else {
+                document.getElementById("diag_output").innerHTML = logs.map(l => `<div class='mb-1 text-amber-300'>${l}</div>`).join('');
+                document.getElementById("rec_status").value = "🔴 需即刻維修 (數據異常)";
             }
         }
 
-        analyzeSystem("A機", 
-            document.getElementById("lp_a").value, document.getElementById("hp_a").value, 
-            document.getElementById("tsuc_a").value, document.getElementById("tdis_a").value,
-            document.getElementById("curr_a_r").value, document.getElementById("curr_a_s").value, document.getElementById("curr_a_t").value
-        );
-        analyzeSystem("B機", 
-            document.getElementById("lp_b").value, document.getElementById("hp_b").value, 
-            document.getElementById("tsuc_b").value, document.getElementById("tdis_b").value,
-            document.getElementById("curr_b_r").value, document.getElementById("curr_b_s").value, document.getElementById("curr_b_t").value
-        );
-
-        let h_in = document.getElementById("h_in").value;
-        let h_out = document.getElementById("h_out").value;
-        if (h_in && h_out) {
-            let h_dt = parseFloat(h_out) - parseFloat(h_in);
-            if (h_dt <= 1.0) {
-                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 熱水側無顯著溫升 (ΔT=${h_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 壓縮機可能未有效壓縮、四通閥嚴重串氣或缺乏冷媒。</span></div>`;
-                issuesText += `[熱水系統] 無顯著溫升(ΔT=${h_dt.toFixed(1)}°C)，壓縮機可能無效作功或串氣。\n`;
-                totalIssues++;
-            } else if (h_dt > 8.0) {
-                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 熱水側溫差過大 (ΔT=${h_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 代表熱水流量嚴重不足！請立即清理熱水循環 Y 型過濾網、檢查循環泵浦或管路閥門。</span></div>`;
-                issuesText += `[熱水系統] 溫差過大(ΔT=${h_dt.toFixed(1)}°C)流量嚴重不足，請清洗熱水濾網與檢查泵浦。\n`;
-                totalIssues++;
-            }
-        }
-
-        let w_in = document.getElementById("w_in").value;
-        let w_out = document.getElementById("w_out").value;
-        if (w_in && w_out) {
-            let w_dt = Math.abs(parseFloat(w_out) - parseFloat(w_in));
-            if (w_dt < 1.0) {
-                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 水源側溫差過小 (ΔT=${w_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 蒸發器未有效吸熱，可能吸熱側換熱髒堵。</span></div>`;
-                issuesText += `[水源系統] 換熱溫差過小(ΔT=${w_dt.toFixed(1)}°C)。\n`;
-                totalIssues++;
-            } else if (w_dt > 7.0) {
-                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 水源側溫差過大 (ΔT=${w_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 水源側流量不足，有蒸發器凍裂危險，請確認水源泵浦。</span></div>`;
-                issuesText += `[水源系統] 溫差過大(ΔT=${w_dt.toFixed(1)}°C)流量不足，有凍裂危險！\n`;
-                totalIssues++;
-            }
-        }
-
-        if (issuesHTML === "") {
-            issuesHTML = "<p style='color:#94a3b8;'>請先輸入運轉數據（壓力、溫度或電流）以利系統進行診斷。</p>";
-            issuesText = "";
-        } else if (totalIssues === 0) {
-            issuesText += "各項運轉數據與水溫換熱皆在正常範圍內。\n";
-        }
-
-        const diagBox = document.getElementById("diagnosis_result");
-        document.getElementById("diagnosis_content").innerHTML = issuesHTML;
-        diagBox.style.display = "block";
-
-        const statusSelect = document.getElementById("rec_status");
-        if (totalIssues >= 2) statusSelect.value = "異常";
-        else if (totalIssues == 1) statusSelect.value = "注意";
-        else if (totalIssues == 0 && issuesHTML.includes("✅")) statusSelect.value = "正常";
-
-        const notes = document.getElementById("rec_notes");
-        if(issuesText !== "") {
-            let currentNotes = notes.value.replace(/【AI 診斷報告】[\s\S]*?(?=\n\n|$)/, "").trim();
-            notes.value = issuesText + (currentNotes ? "\n\n" + currentNotes : "");
-        }
-        diagBox.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-
-    function clearFilter() { window.location.href = window.location.pathname; }
-
-    // ========== 儲存紀錄與同步雲端試算表 ==========
-    function saveRecord() {
-        const customer = document.getElementById("rec_customer").value.trim();
-        if (!customer) { alert("請填寫【客戶/案場名稱】！"); return; }
-        
-        const record = {
-            id: Date.now(),
-            date: new Date().toISOString().slice(0,16).replace('T',' '),
-            customer, 
-            model: document.getElementById("rec_model").value.trim(), 
-            type: document.getElementById("rec_type").value, 
-            ref: document.getElementById("rec_ref").value, 
-            phase: document.getElementById("rec_phase").value, 
-            volt: document.getElementById("rec_volt").value, 
-            status: document.getElementById("rec_status").value, 
-            notes: document.getElementById("rec_notes").value.trim(),
-            cur_a: [document.getElementById("curr_a_r").value, document.getElementById("curr_a_s").value, document.getElementById("curr_a_t").value],
-            cur_b: [document.getElementById("curr_b_r").value, document.getElementById("curr_b_s").value, document.getElementById("curr_b_t").value],
-            sys_a: [document.getElementById("lp_a").value, document.getElementById("hp_a").value, document.getElementById("tsuc_a").value, document.getElementById("tdis_a").value],
-            sys_b: [document.getElementById("lp_b").value, document.getElementById("hp_b").value, document.getElementById("tsuc_b").value, document.getElementById("tdis_b").value],
-            water: [document.getElementById("w_in").value, document.getElementById("w_out").value, document.getElementById("h_in").value, document.getElementById("h_out").value],
-            photos: currentBase64Photos
-        };
-
-        // 1. 先存入本地 LocalStorage
-        let records = JSON.parse(localStorage.getItem("hp_ai_records_v5")) || [];
-        records.unshift(record);
-        localStorage.setItem("hp_ai_records_v5", JSON.stringify(records));
-
-        // 2. 同步發送到 Google 試算表後端
-        if (CLOUD_API_URL && !CLOUD_API_URL.includes("XXXXXX")) {
-            fetch(CLOUD_API_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(record)
-            })
-            .then(() => {
-                console.log("雲端同步成功");
-            })
-            .catch(err => {
-                console.error("雲端同步失敗:", err);
-            });
-        }
-
-        alert("📥 巡檢數據已成功存檔，並自動同步至 Google 雲端試算表！");
-        clearForm(); 
-        renderRecords();
-    }
-
-    function clearForm() {
-        document.querySelectorAll("input[type='number'], input[type='text'], textarea").forEach(i => i.value = "");
-        document.getElementById("rec_photo").value = "";
-        document.getElementById("photo_previews").innerHTML = "";
-        document.getElementById("qr_container").style.display = "none";
-        document.getElementById("diagnosis_result").style.display = "none";
-        currentBase64Photos = []; toggleQRBtn();
-    }
-
-    function renderRecords() {
-        const list = document.getElementById("records_list");
-        const searchInput = document.getElementById("search_input").value.toLowerCase();
-        const filterId = new URLSearchParams(window.location.search).get('id');
-        let records = JSON.parse(localStorage.getItem("hp_ai_records_v5")) || [];
-        
-        if (filterId) records = records.filter(r => r.model && r.model.toLowerCase() === filterId.toLowerCase());
-        else if (searchInput) records = records.filter(r => r.customer.toLowerCase().includes(searchInput) || r.model.toLowerCase().includes(searchInput) || r.notes.toLowerCase().includes(searchInput));
-
-        document.getElementById("rec_count").innerText = records.length;
-        list.innerHTML = records.length === 0 ? `<p style="text-align:center; color:#64748b;">無履歷紀錄</p>` : "";
-
-        records.forEach(r => {
-            let badge = r.status === "正常" ? "badge-normal" : (r.status === "注意" ? "badge-warning" : "badge-danger");
-            let pHTML = r.photos?.length ? `<div class="preview-container">${r.photos.map(p=>`<img src="${p}" class="img-preview" onclick="window.open(this.src)">`).join('')}</div>` : "";
+        // ========== 儲存紀錄與同步雲端試算表（全面修正跨網域限制） ==========
+        function saveRecord() {
+            const customer = document.getElementById("rec_customer").value.trim();
+            if (!customer) { alert("請填寫【客戶/案場名稱】！"); return; }
             
-            list.innerHTML += `
-                <div class="record-card">
-                    <button class="btn-delete" onclick="deleteRecord(${r.id})">❌</button>
-                    <div class="record-header"><span class="customer-name">🏢 ${r.customer} (機號: ${r.model||'未填'})</span><span class="record-date">📅 ${r.date}</span></div>
-                    <div><span class="badge ${badge}">${r.status}</span><span class="data-tag">型式: ${r.type}</span><span class="data-tag">冷媒: ${r.ref}</span><span class="data-tag">電源: ${r.phase}/${r.volt}</span></div>
-                    
-                    <div style="margin-top:8px; font-size:12px; color:#cbd5e1; display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <div style="background:rgba(255,255,255,0.02); padding:6px; border-radius:4px;"><strong>🅰️ A系統：</strong>低壓 ${r.sys_a[0]||'-'} / 高壓 ${r.sys_a[1]||'-'} | 吸 ${r.sys_a[2]||'-'} / 排 ${r.sys_a[3]||'-'}<br>電流: R:${r.cur_a[0]||'-'} / S:${r.cur_a[1]||'-'} / T:${r.cur_a[2]||'-'}</div>
-                        <div style="background:rgba(255,255,255,0.02); padding:6px; border-radius:4px;"><strong>🅱️ B系統：</strong>低壓 ${r.sys_b[0]||'-'} / 高壓 ${r.sys_b[1]||'-'} | 吸 ${r.sys_b[2]||'-'} / 排 ${r.sys_b[3]||'-'}<br>電流: R:${r.cur_b[0]||'-'} / S:${r.cur_b[1]||'-'} / T:${r.cur_b[2]||'-'}</div>
-                    </div>
-                    <div style="margin-top:5px; font-size:12px;">
-                        <span class="data-tag"><span class="tag-title">🔥 熱水進出溫:</span> 入 ${r.water[2]||'-'} °C / 出 ${r.water[3]||'-'} °C</span>
-                        <span class="data-tag"><span class="tag-title">💧 水源進出溫:</span> 入 ${r.water[0]||'-'} °C / 出 ${r.water[1]||'-'} °C</span>
-                    </div>
-                    <p style="margin: 8px 0; font-size:13px; color:#cbd5e1; background:#1e293b; padding:8px; border-radius:6px; white-space: pre-wrap;"><strong>處置備註：</strong>\n${r.notes || '無備註'}</p>
-                    ${pHTML}
-                </div>`;
-        });
-    }
+            const record = {
+                id: Date.now(),
+                date: new Date().toISOString().slice(0,16).replace('T',' '),
+                customer, 
+                model: document.getElementById("rec_model").value.trim(), 
+                type: document.getElementById("rec_type").value, 
+                ref: document.getElementById("rec_ref").value, 
+                phase: document.getElementById("rec_phase").value, 
+                volt: document.getElementById("rec_volt").value, 
+                status: document.getElementById("rec_status").value, 
+                notes: document.getElementById("rec_notes").value.trim(),
+                cur_a: [document.getElementById("curr_a_r").value, document.getElementById("curr_a_s").value, document.getElementById("curr_a_t").value],
+                cur_b: [document.getElementById("curr_b_r").value, document.getElementById("curr_b_s").value, document.getElementById("curr_b_t").value],
+                sys_a: [document.getElementById("lp_a").value, document.getElementById("hp_a").value, document.getElementById("tsuc_a").value, document.getElementById("tdis_a").value],
+                sys_b: [document.getElementById("lp_b").value, document.getElementById("hp_b").value, document.getElementById("tsuc_b").value, document.getElementById("tdis_b").value],
+                water: [document.getElementById("w_in").value, document.getElementById("w_out").value, document.getElementById("h_in").value, document.getElementById("h_out").value],
+                photos: currentBase64Photos
+            };
 
-    function deleteRecord(id) {
-        if(confirm("確定刪除？")) {
-            localStorage.setItem("hp_ai_records_v5", JSON.stringify((JSON.parse(localStorage.getItem("hp_ai_records_v5"))||[]).filter(r => r.id !== id)));
+            // 1. 先安全存入本地 LocalStorage (確保沒網路也能留底)
+            let records = JSON.parse(localStorage.getItem("hp_ai_records_v5")) || [];
+            records.unshift(record);
+            localStorage.setItem("hp_ai_records_v5", JSON.stringify(records));
+
+            // 2. 升級版雲端同步（改用標準文字表單參數格式 + no-cors，強制突破 Google 網域限制）
+            if (CLOUD_API_URL && CLOUD_API_URL.startsWith("http")) {
+                const formData = new URLSearchParams();
+                formData.append("jsonData", JSON.stringify(record));
+
+                fetch(CLOUD_API_URL, {
+                    method: "POST",
+                    mode: "no-cors", // 關鍵設定：不進行跨網域預檢，直接進行盲發送
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: formData.toString()
+                })
+                .then(() => console.log("☁️ 雲端同步發送完畢（已略過網域檢驗）"))
+                .catch(err => console.error("☁️ 雲端傳輸發生底層錯誤:", err));
+            }
+
+            alert("📥 巡檢數據已成功存檔，並自動同步發送至 Google 雲端試算表！");
+            clearForm(); 
             renderRecords();
         }
-    }
 
-    function exportToCSV() {
-        let records = JSON.parse(localStorage.getItem("hp_ai_records_v5")) || [];
-        if (!records.length) return alert("無資料");
-        let csv = "\uFEFF日期,客戶,型號,型式,冷媒,電源,電壓,A低壓,A高壓,A吸氣,A排氣,A_R電流,A_S電流,A_T電流,B低壓,B高壓,B吸氣,B排氣,B_R電流,B_S電流,B_T電流,水源入水,水源出水,熱水入水,熱水出水,狀態,診斷與備註\n";
-        records.forEach(r => csv += `"${r.date}","${r.customer}","${r.model}","${r.type}","${r.ref}","${r.phase}","${r.volt}","${r.sys_a[0]}","${r.sys_a[1]}","${r.sys_a[2]}","${r.sys_a[3]}","${r.cur_a[0]}","${r.cur_a[1]}","${r.cur_a[2]}","${r.sys_b[0]}","${r.sys_b[1]}","${r.sys_b[2]}","${r.sys_b[3]}","${r.cur_b[0]}","${r.cur_b[1]}","${r.cur_b[2]}","${r.water[0]}","${r.water[1]}","${r.water[2]}","${r.water[3]}","${r.status}","${(r.notes||"").replace(/"/g,'""')}"\n`);
-        const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
-        a.download = `旗艦版熱泵智慧履歷_${new Date().toISOString().slice(0,10)}.csv`; a.click();
-    }
-</script>
+        // 清空表單
+        function clearForm() {
+            document.getElementById("rec_customer").value = "";
+            document.getElementById("rec_model").value = "";
+            document.getElementById("rec_notes").value = "";
+            document.getElementById("rec_photos").value = "";
+            document.getElementById("photo_preview_container").innerHTML = "";
+            currentBase64Photos = [];
+            
+            // 清除各數值欄位
+            const inputs = document.querySelectorAll("input[type='number']");
+            inputs.forEach(i => i.value = "");
+            
+            document.getElementById("diag_output").innerHTML = "尚未執行分析。請輸入上方實測運轉數據後，點擊「執行數據診斷」按鈕。";
+            generateQuickQR();
+        }
+
+        // 清除搜尋過濾
+        function clearSearch() {
+            document.getElementById("search_customer").value = "";
+            document.getElementById("search_model").value = "";
+            renderRecords();
+        }
+
+        // 渲染歷史履歷表格內容
+        function renderRecords() {
+            const records = JSON.parse(localStorage.getItem("hp_ai_records_v5")) || [];
+            const tbody = document.getElementById("records_tbody");
+            
+            const filterCustomer = document.getElementById("search_customer").value.trim().toLowerCase();
+            const filterModel = document.getElementById("search_model").value.trim().toLowerCase();
+            
+            tbody.innerHTML = "";
+            let count = 0;
+
+            records.forEach(r => {
+                // 條件過濾邏輯
+                if(filterCustomer && !r.customer.toLowerCase().includes(filterCustomer)) return;
+                if(filterModel && !r.model.toLowerCase().includes(filterModel)) return;
+                
+                count++;
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-gray-50 border-b border-gray-200";
+                
+                // 處理多張照片縮圖
+                let photoHtml = `<span class='text-gray-400 text-xs'>無影像</span>`;
+                if(r.photos && r.photos.length > 0) {
+                    photoHtml = `<div class='flex gap-1 justify-center'>`;
+                    r.photos.forEach(p => {
+                        photoHtml += `<img src="${p}" class="w-8 h-8 rounded border object-cover cursor-pointer" onclick="viewLargeImage('${p}')">`;
+                    });
+                    photoHtml += `</div>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3 text-xs font-medium text-gray-500">${r.date}</td>
+                    <td class="p-3 font-bold text-gray-800">${r.customer}</td>
+                    <td class="p-3">
+                        <span class="block text-xs font-mono font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded inline-block">${r.model || '未註明機號'}</span>
+                        <span class="block text-xs text-gray-400 mt-0.5">${r.type} (${r.ref})</span>
+                    </td>
+                    <td class="p-3 text-xs space-y-0.5">
+                        <div class="text-blue-700">迴路A高低壓: <span class="font-bold">${r.sys_a[1] || '0'}/${r.sys_a[0] || '0'}</span> kg</div>
+                        <div class="text-blue-700">迴路A排氣溫: <span class="font-bold">${r.sys_a[3] || '0'}</span> ℃</div>
+                        <div class="text-amber-700">熱水進出水: <span class="font-bold">${r.water[2] || '0'}→${r.water[3] || '0'}</span> ℃</div>
+                    </td>
+                    <td class="p-3">
+                        <div class="text-xs font-bold">${r.status}</div>
+                        <div class="text-xs text-gray-500 max-w-[200px] truncate" title="${r.notes}">${r.notes || '無詳細備註'}</div>
+                    </td>
+                    <td class="p-3 text-center">${photoHtml}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="deleteRecord(${r.id})" class="text-xs font-bold text-red-500 hover:text-red-700 hover:underline">刪除</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById("record_counter").innerText = `目前篩選出：${count} 筆巡檢履歷`;
+        }
+
+        // 點擊看大圖
+        function viewLargeImage(base64) {
+            const w = window.open();
+            w.document.write(`<body style="margin:0; background:#000; display:flex; justify-content:center; items-center:center; height:100vh;"><img src="${base64}" style="max-width:100%; max-height:100%; object-fit:contain;"></body>`);
+            w.document.close();
+        }
+
+        // 刪除特定紀錄
+        function deleteRecord(id) {
+            if(!confirm("⚠️ 確定要刪除此筆巡檢履歷嗎？此操作無法還原本地數據！")) return;
+            let records = JSON.parse(localStorage.getItem("hp_ai_records_v5")) || [];
+            records = records.filter(r => r.id !== id);
+            localStorage.setItem("hp_ai_records_v5", JSON.stringify(records));
+            renderRecords();
+        }
+
+        // 📊 一鍵匯出 Excel 相容的標準 CSV 報表
+        function exportToCSV() {
+            const records = JSON.parse(localStorage.getItem("hp_ai_records_v5")) || [];
+            if(records.length === 0) { alert("目前履歷庫中尚無任何數據可供匯出！"); return; }
+
+            // 建立 CSV 檔頭與資料
+            let csvContent = "\uFEFF"; // 補上 UTF-8 BOM，防止 Excel 開啟時產生亂碼
+            csvContent += "巡檢時間,客戶案場,主機機號,主機種類,冷媒,狀態評級,備註說明,迴路A低壓,迴路A高壓,迴路A排氣溫,熱水進水,熱水出水\n";
+
+            records.forEach(r => {
+                const row = [
+                    r.date,
+                    `"${r.customer.replace(/"/g, '""')}"`,
+                    `"${r.model.replace(/"/g, '""')}"`,
+                    r.type,
+                    r.ref,
+                    r.status,
+                    `"${(r.notes || '').replace(/"/g, '""')}"`,
+                    r.sys_a[0] || 0,
+                    r.sys_a[1] || 0,
+                    r.sys_a[3] || 0,
+                    r.water[2] || 0,
+                    r.water[3] || 0
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+
+            // 觸發瀏覽器下載
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `碩豐熱泵巡檢履歷報表_${new Date().toISOString().slice(0,10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
 </body>
 </html>

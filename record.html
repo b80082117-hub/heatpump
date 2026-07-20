@@ -77,7 +77,7 @@
             <div class="grid-2">
                 <div class="form-group">
                     <label>熱泵型式</label>
-                    <select id="rec_type"><option value="AHP">AHP (空氣源)</option><option value="WHP">WHP (水源型)</option><option value="AWHP">AWHP (全效/雙源)</option></select>
+                    <select id="rec_type" onchange="toggleWaterSection()"><option value="AHP">AHP (空氣源)</option><option value="WHP">WHP (水源型)</option><option value="AWHP">AWHP (全效/雙源)</option></select>
                 </div>
                 <div class="form-group">
                     <label>使用冷媒</label>
@@ -108,8 +108,8 @@
             <div class="sub-section-box">
                 <label style="color:#a7f3d0; font-weight:bold;">🌀 A 系統冷媒迴路</label>
                 <div class="grid-2">
-                    <div class="form-group"><label>低壓 (kg)</label><input type="number" id="lp_a" step="0.1"></div>
-                    <div class="form-group"><label>高壓 (kg)</label><input type="number" id="hp_a" step="0.1"></div>
+                    <div class="form-group"><label>低壓 (kg/cm²)</label><input type="number" id="lp_a" step="0.1"></div>
+                    <div class="form-group"><label>高壓 (kg/cm²)</label><input type="number" id="hp_a" step="0.1"></div>
                 </div>
                 <div class="grid-2">
                     <div class="form-group"><label>吸氣溫 (°C)</label><input type="number" id="tsuc_a" step="0.1"></div>
@@ -119,8 +119,8 @@
             <div class="sub-section-box">
                 <label style="color:#fef08a; font-weight:bold;">🌀 B 系統冷媒迴路</label>
                 <div class="grid-2">
-                    <div class="form-group"><label>低壓 (kg)</label><input type="number" id="lp_b" step="0.1"></div>
-                    <div class="form-group"><label>高壓 (kg)</label><input type="number" id="hp_b" step="0.1"></div>
+                    <div class="form-group"><label>低壓 (kg/cm²)</label><input type="number" id="lp_b" step="0.1"></div>
+                    <div class="form-group"><label>高壓 (kg/cm²)</label><input type="number" id="hp_b" step="0.1"></div>
                 </div>
                 <div class="grid-2">
                     <div class="form-group"><label>吸氣溫 (°C)</label><input type="number" id="tsuc_b" step="0.1"></div>
@@ -135,8 +135,8 @@
                     <div class="form-group"><label>熱水出水溫 (°C)</label><input type="number" id="h_out" step="0.1" placeholder="出主機"></div>
                 </div>
             </div>
-            <div class="sub-section-box">
-                <label style="color:#67e8f9; font-weight:bold;">💧 水源側水溫 (蒸發吸熱 - WHP/AWHP用)</label>
+            <div class="sub-section-box" id="source_water_section" style="display:none;">
+                <label style="color:#67e8f9; font-weight:bold;">💧 水源側水溫 (WHP/AWHP 專用)</label>
                 <div class="grid-2">
                     <div class="form-group"><label>水源入水溫 (°C)</label><input type="number" id="w_in" step="0.1"></div>
                     <div class="form-group"><label>水源出水溫 (°C)</label><input type="number" id="w_out" step="0.1"></div>
@@ -161,7 +161,7 @@
                 <div id="photo_previews" class="preview-container"></div>
             </div>
             <div class="form-group">
-                <label>維修處置說明 (點擊「智慧診斷」會自動帶入建議)</label>
+                <label>維修處置說明 (智慧診斷會自動附加報告)</label>
                 <textarea id="rec_notes" placeholder="例如：更換零件紀錄..."></textarea>
             </div>
         </div>
@@ -196,9 +196,7 @@
 </div>
 
 <script>
-    // ✦✦✦ 雲端 API 串接設定 ✦✦✦
     const CLOUD_API_URL = "https://script.google.com/macros/s/AKfybycjmQjr0otxP-kJDnlMc2_9ZaSTs7YxQGT37Hi032u-Px6c2C0LHBgCA3w4gpx9w4Llg/exec";
-
     let currentBase64Photos = [];
 
     window.onload = function() {
@@ -210,12 +208,19 @@
             document.getElementById("rec_model").value = deviceId;
             toggleQRBtn();
         }
+        toggleWaterSection();
         renderRecords();
     };
 
     function toggleQRBtn() {
         const modelVal = document.getElementById("rec_model").value.trim();
         document.getElementById("qr_gen_btn").style.display = modelVal ? "inline-block" : "none";
+    }
+
+    function toggleWaterSection() {
+        const type = document.getElementById("rec_type").value;
+        const section = document.getElementById("source_water_section");
+        section.style.display = (type === "WHP" || type === "AWHP") ? "block" : "none";
     }
 
     function previewAndCompressImages(input) {
@@ -258,31 +263,50 @@
         new QRCode(qrCanvas, { text: targetUrl, width: 160, height: 160, colorDark: "#0f172a", colorLight: "#ffffff" });
     }
 
-    // ========== 專家級智慧診斷引擎 ==========
+    // ========== 升級版：系統專家級智慧診斷引擎 ==========
     function runSmartDiagnosis() {
         const ref = document.getElementById("rec_ref").value;
         const phase = document.getElementById("rec_phase").value;
+        const type = document.getElementById("rec_type").value;
         
-        let hp_threshold = (ref === "R410A" || ref === "R32") ? 28 : 19;
-        let lp_low_threshold = (ref === "R410A" || ref === "R32") ? 5 : 2.5;
+        let hp_high_threshold = (ref === "R410A" || ref === "R32") ? 32 : 22;
+        let lp_low_threshold = (ref === "R410A" || ref === "R32") ? 6.0 : 3.5;
 
         let issuesHTML = "";
         let issuesText = "【AI 診斷報告】\n";
         let totalIssues = 0;
 
-        function analyzeSystem(sysName, lp, hp, tsuc, tdis, curR, curS, curT) {
+        function analyzeSystem(sysName, lpStr, hpStr, tsucStr, tdisStr, curRStr, curSStr, curTStr) {
+            if (!lpStr && !hpStr && !tsucStr && !tdisStr) return; // 該系統無數據則跳過
+
+            let lp = parseFloat(lpStr), hp = parseFloat(hpStr);
+            let tsuc = parseFloat(tsucStr), tdis = parseFloat(tdisStr);
             let sysIssues = [];
             
-            if(hp && hp > hp_threshold) sysIssues.push({ err: `高壓過高 (${hp} kg)`, sol: "檢查熱水流量、冷凝器器結垢情況、或冷媒充填過多。" });
-            if(lp && lp < lp_low_threshold) sysIssues.push({ err: `低壓過低 (${lp} kg)`, sol: "檢查冷媒是否洩漏、膨脹閥卡死或吸熱側(鰭片/冰水)熱交換不良。" });
-            if(tdis && tdis > 105) sysIssues.push({ err: `排氣溫度危險 (${tdis} °C)`, sol: "壓縮機有燒毀風險！可能冷媒嚴重不足或壓縮比過大，請即刻停機檢查。" });
+            // 1. 高壓判斷
+            if(!isNaN(hp) && hp > hp_high_threshold) {
+                sysIssues.push({ err: `高壓過高 (${hp} kg/cm²)`, sol: "檢查熱水流量是否不足、冷凝器是否結垢、或系統內冷媒充填過多。" });
+            }
+            // 2. 複合式冷媒與系統判斷 (引進過熱度與排氣複合邏輯)
+            if(!isNaN(lp) && lp < lp_low_threshold) {
+                if (!isNaN(tdis) && tdis > 90) {
+                    sysIssues.push({ err: `低壓過低且排氣偏高 (低壓: ${lp} kg/cm², 排氣: ${tdis} °C)`, sol: "典型冷媒洩漏系統缺冷媒，或膨脹閥開度過小/冰堵。請進行系統探漏。" });
+                } else {
+                    sysIssues.push({ err: `低壓過低 (${lp} kg/cm²)`, sol: "請排查吸熱側（空氣源環境溫過低/鰭片髒堵結霜；水源源側水流量不足或蒸發器換熱不良）。" });
+                }
+            }
+            // 3. 高溫排氣危險
+            if(!isNaN(tdis) && tdis > 105) {
+                sysIssues.push({ err: `排氣溫度危險 (${tdis} °C)`, sol: "壓縮機有燒毀風險！主機可能嚴重缺冷媒或壓縮比過大，請即刻停機排查。" });
+            }
             
-            if (phase === "三相" && curR && curS && curT) {
-                let r = parseFloat(curR), s = parseFloat(curS), t = parseFloat(curT);
+            // 4. 三相電流平衡判斷
+            if (phase === "三相" && curRStr && curSStr && curTStr) {
+                let r = parseFloat(curRStr), s = parseFloat(curSStr), t = parseFloat(curTStr);
                 let avg = (r + s + t) / 3;
                 let maxDiff = Math.max(Math.abs(r-avg), Math.abs(s-avg), Math.abs(t-avg));
-                if(avg > 0 && (maxDiff / avg) > 0.15) {
-                    sysIssues.push({ err: `三相電流嚴重不平衡`, sol: `R:${r}A, S:${s}A, T:${t}A (落差>15%)。請排查電源端或壓縮機線圈。` });
+                if(avg > 1.0 && (maxDiff / avg) > 0.15) {
+                    sysIssues.push({ err: `三相電流嚴重不平衡 (落差 > 15%)`, sol: `目前 R:${r}A, S:${s}A, T:${t}A。請檢查現場電源端供電電壓或壓縮機電磁接觸器接點、線圈阻值。` });
                 }
             }
 
@@ -295,8 +319,8 @@
                     totalIssues++;
                 });
                 issuesHTML += `</div>`;
-            } else if (hp || lp) {
-                issuesHTML += `<div class="diagnosis-item"><span class="diag-normal">✅ ${sysName}系統冷媒與電氣數據初步正常。</span></div>`;
+            } else {
+                issuesHTML += `<div class="diagnosis-item"><span class="diag-normal">✅ ${sysName}系統運轉數據在初步正常範圍內。</span></div>`;
             }
         }
 
@@ -311,63 +335,60 @@
             document.getElementById("curr_b_r").value, document.getElementById("curr_b_s").value, document.getElementById("curr_b_t").value
         );
 
-        let h_in = document.getElementById("h_in").value;
-        let h_out = document.getElementById("h_out").value;
-        if (h_in && h_out) {
-            let h_dt = parseFloat(h_out) - parseFloat(h_in);
+        // 5. 熱水側水溫換熱效能判斷
+        let h_in = parseFloat(document.getElementById("h_in").value);
+        let h_out = parseFloat(document.getElementById("h_out").value);
+        if (!isNaN(h_in) && !isNaN(h_out)) {
+            let h_dt = h_out - h_in;
             if (h_dt <= 1.0) {
-                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 熱水側無顯著溫升 (ΔT=${h_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 壓縮機可能未有效壓縮、四通閥嚴重串氣或缺乏冷媒。</span></div>`;
-                issuesText += `[熱水系統] 無顯著溫升(ΔT=${h_dt.toFixed(1)}°C)，壓縮機可能無效作功或串氣。\n`;
+                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 熱水側無顯著溫升 (ΔT=${h_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 壓縮機可能未有效壓縮（無作功）、四通閥串氣或製熱系統內完全無冷媒。</span></div>`;
+                issuesText += `[熱水系統] 無顯著溫升(ΔT=${h_dt.toFixed(1)}°C)，壓縮機未作功或串氣。\n`;
                 totalIssues++;
             } else if (h_dt > 8.0) {
-                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 熱水側溫差過大 (ΔT=${h_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 代表熱水流量嚴重不足！請立即清理熱水循環 Y 型過濾網、檢查循環泵浦或管路閥門。</span></div>`;
-                issuesText += `[熱水系統] 溫差過大(ΔT=${h_dt.toFixed(1)}°C)流量嚴重不足，請清洗熱水濾網與檢查泵浦。\n`;
+                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 熱水側溫差過大 (ΔT=${h_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 代表循環熱水流量嚴重不足！請清理熱水管路之 Y 型過濾網、確認循環水幫浦運轉電流與管路閥門。</span></div>`;
+                issuesText += `[熱水系統] 溫差過大(ΔT=${h_dt.toFixed(1)}°C)流量不足，請清洗熱水濾網與檢查泵浦。\n`;
                 totalIssues++;
             }
         }
 
-        let w_in = document.getElementById("w_in").value;
-        let w_out = document.getElementById("w_out").value;
-        if (w_in && w_out) {
-            let w_dt = Math.abs(parseFloat(w_out) - parseFloat(w_in));
-            if (w_dt < 1.0) {
-                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 水源側溫差過小 (ΔT=${w_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 蒸發器未有效吸熱，可能吸熱側換熱髒堵。</span></div>`;
-                issuesText += `[水源系統] 換熱溫差過小(ΔT=${w_dt.toFixed(1)}°C)。\n`;
-                totalIssues++;
-            } else if (w_dt > 7.0) {
-                issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 水源側溫差過大 (ΔT=${w_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 水源側流量不足，有蒸發器凍裂危險，請確認水源泵浦。</span></div>`;
-                issuesText += `[水源系統] 溫差過大(ΔT=${w_dt.toFixed(1)}°C)流量不足，有凍裂危險！\n`;
-                totalIssues++;
+        // 6. 水源側換熱判斷 (僅限水源型 WHP / AWHP 觸發防呆)
+        if (type === "WHP" || type === "AWHP") {
+            let w_in = parseFloat(document.getElementById("w_in").value);
+            let w_out = parseFloat(document.getElementById("w_out").value);
+            if (!isNaN(w_in) && !isNaN(w_out)) {
+                let w_dt = Math.abs(w_out - w_in);
+                if (w_dt < 1.0) {
+                    issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 水源側熱交換溫差過小 (ΔT=${w_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 蒸發器未有效吸熱。請排查冷媒側膨脹閥冰堵/卡死，或換熱管束表面嚴重髒堵結垢。</span></div>`;
+                    issuesText += `[水源系統] 換熱溫差過小(ΔT=${w_dt.toFixed(1)}°C)，蒸發器未有效吸熱。\n`;
+                    totalIssues++;
+                } else if (w_dt > 6.0) {
+                    issuesHTML += `<div class="diagnosis-item"><span class="diag-title">⚠️ 水源側溫差過大 (ΔT=${w_dt.toFixed(1)}°C)</span><span class="diag-solution">👉 水源側流量不足！有造成殼管式/板式蒸發器「結冰凍裂」的極高危險，請即刻確認水源泵浦與流量開關。</span></div>`;
+                    issuesText += `[水源系統] 溫差過大(ΔT=${w_dt.toFixed(1)}°C)流量嚴重不足，有凍裂高風險！\n`;
+                    totalIssues++;
+                }
             }
         }
 
-        if (issuesHTML === "") {
-            issuesHTML = "<p style='color:#94a3b8;'>請先輸入運轉數據（壓力、溫度或電流）以利系統進行診斷。</p>";
-            issuesText = "";
-        } else if (totalIssues === 0) {
-            issuesText += "各項運轉數據與水溫換熱皆在正常範圍內。\n";
-        }
-
+        // 顯示結果判定
         const diagBox = document.getElementById("diagnosis_result");
+        const statusSelect = document.getElementById("rec_status");
+        
+        if (totalIssues >= 2) statusSelect.value = "異常";
+        else if (totalIssues == 1) statusSelect.value = "注意";
+        else statusSelect.value = "正常";
+
         document.getElementById("diagnosis_content").innerHTML = issuesHTML;
         diagBox.style.display = "block";
 
-        const statusSelect = document.getElementById("rec_status");
-        if (totalIssues >= 2) statusSelect.value = "異常";
-        else if (totalIssues == 1) statusSelect.value = "注意";
-        else if (totalIssues == 0 && issuesHTML.includes("✅")) statusSelect.value = "正常";
-
         const notes = document.getElementById("rec_notes");
-        if(issuesText !== "") {
-            let currentNotes = notes.value.replace(/【AI 診斷報告】[\s\S]*?(?=\n\n|$)/, "").trim();
-            notes.value = issuesText + (currentNotes ? "\n\n" + currentNotes : "");
-        }
+        let currentNotes = notes.value.replace(/【AI 診斷報告】[\s\S]*?(?=\n\n|$)/, "").trim();
+        notes.value = (totalIssues > 0 ? issuesText : "【AI 診斷報告】各項運轉數據、水側換熱初步皆在正常範圍。") + (currentNotes ? "\n\n" + currentNotes : "");
+        
         diagBox.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
     function clearFilter() { window.location.href = window.location.pathname; }
 
-    // ========== 儲存紀錄與同步雲端試算表 ==========
     function saveRecord() {
         const customer = document.getElementById("rec_customer").value.trim();
         if (!customer) { alert("請填寫【客戶/案場名稱】！"); return; }
@@ -391,12 +412,10 @@
             photos: currentBase64Photos
         };
 
-        // 1. 先存入本地 LocalStorage
         let records = JSON.parse(localStorage.getItem("hp_ai_records_v5")) || [];
         records.unshift(record);
         localStorage.setItem("hp_ai_records_v5", JSON.stringify(records));
 
-        // 2. 同步發送到 Google 試算表後端
         if (CLOUD_API_URL && !CLOUD_API_URL.includes("XXXXXX")) {
             fetch(CLOUD_API_URL, {
                 method: "POST",
@@ -404,12 +423,8 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(record)
             })
-            .then(() => {
-                console.log("雲端同步成功");
-            })
-            .catch(err => {
-                console.error("雲端同步失敗:", err);
-            });
+            .then(() => console.log("雲端同步成功"))
+            .catch(err => console.error("雲端同步失敗:", err));
         }
 
         alert("📥 巡檢數據已成功存檔，並自動同步至 Google 雲端試算表！");
@@ -423,7 +438,9 @@
         document.getElementById("photo_previews").innerHTML = "";
         document.getElementById("qr_container").style.display = "none";
         document.getElementById("diagnosis_result").style.display = "none";
-        currentBase64Photos = []; toggleQRBtn();
+        currentBase64Photos = []; 
+        toggleQRBtn();
+        toggleWaterSection();
     }
 
     function renderRecords() {
@@ -454,7 +471,7 @@
                     </div>
                     <div style="margin-top:5px; font-size:12px;">
                         <span class="data-tag"><span class="tag-title">🔥 熱水進出溫:</span> 入 ${r.water[2]||'-'} °C / 出 ${r.water[3]||'-'} °C</span>
-                        <span class="data-tag"><span class="tag-title">💧 水源進出溫:</span> 入 ${r.water[0]||'-'} °C / 出 ${r.water[1]||'-'} °C</span>
+                        ${(r.type === 'WHP' || r.type === 'AWHP') ? `<span class="data-tag"><span class="tag-title">💧 水源進出溫:</span> 入 ${r.water[0]||'-'} °C / 出 ${r.water[1]||'-'} °C</span>` : ''}
                     </div>
                     <p style="margin: 8px 0; font-size:13px; color:#cbd5e1; background:#1e293b; padding:8px; border-radius:6px; white-space: pre-wrap;"><strong>處置備註：</strong>\n${r.notes || '無備註'}</p>
                     ${pHTML}

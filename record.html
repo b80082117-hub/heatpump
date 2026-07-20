@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>碩豐熱泵智AI斷與履歷管理平台</title>
+    <title>碩豐熱泵智慧AI診斷與履歷管理平台</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body { font-family: "Segoe UI", "Microsoft JhengHei", Arial, sans-serif; background-color: #0f172a; color: #f1f5f9; margin: 0; padding: 15px; line-height: 1.5; }
@@ -51,7 +51,7 @@
         #qrcode-canvas { display: inline-block; background: white; padding: 10px; border-radius: 8px; margin-top: 10px; }
         .qr-url-text { font-size: 11px; color: #475569; word-break: break-all; margin-top: 5px; }
         .filter-alert { background: #0369a1; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .sub-section-box { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 10px; }
+        .sub-section-box { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 10px; box-sizing: border-box; width: 100%; }
     </style>
 </head>
 <body>
@@ -93,11 +93,13 @@
                     <label>工作電壓</label><select id="rec_volt"><option value="220V">220V</option><option value="380V" selected>380V</option><option value="440V">440V</option></select>
                 </div>
             </div>
-            <!-- 新增：僅在前端做程序判斷的額定電流欄位 -->
-            <div class="form-group" style="border: 1px dashed #38bdf8; padding: 8px; border-radius: 8px; margin-top: 5px; background: rgba(56,189,248,0.05);">
-                <label style="color:#38bdf8; font-weight: bold;">⚙️ 壓縮機額定電流 (A) <span style="font-size:11px; color:#94a3b8; font-weight:normal;">(不輸出到後台)</span></label>
-                <input type="number" id="local_rated_current" step="0.1" placeholder="例如: 15.0">
+            
+            <!-- 修正：將壓縮機額定電流欄位改為顯眼獨立大區塊 -->
+            <div class="form-group" style="border: 2px dashed #0284c7; padding: 10px; border-radius: 8px; margin: 15px 0; background: rgba(2,132,199,0.1); box-sizing: border-box; width: 100%;">
+                <label style="color:#38bdf8; font-weight: bold; font-size: 14px; display: block; margin-bottom: 6px;">⚙️ 壓縮機額定電流值 (A)</label>
+                <input type="number" id="local_rated_current" step="0.1" placeholder="請輸入額定電流 (僅作程序判斷，不傳後台)" style="border-color: #0284c7; background-color: #0f172a;">
             </div>
+
             <div class="sub-section-box">
                 <label style="color:#38bdf8; font-weight:bold;">⚡ A機實測電流 (A)</label>
                 <div class="grid-inner-3"><input type="number" id="curr_a_r" placeholder="R相"><input type="number" id="curr_a_s" placeholder="S相"><input type="number" id="curr_a_t" placeholder="T相"></div>
@@ -270,19 +272,18 @@
         new QRCode(qrCanvas, { text: targetUrl, width: 160, height: 160, colorDark: "#0f172a", colorLight: "#ffffff" });
     }
 
-    // 精準化的實務熱泵智慧診斷邏輯（全新修正版）
     function runSmartDiagnosis() {
         const ref = document.getElementById("rec_ref").value;
         const phase = document.getElementById("rec_phase").value;
         const type = document.getElementById("rec_type").value;
-        const ratedCurrent = parseFloat(document.getElementById("local_rated_current").value); // 前端額定電流
+        const ratedCurrent = parseFloat(document.getElementById("local_rated_current").value); 
         
         let hp_upper_limit = (ref === "R410A" || ref === "R32") ? 33 : 23;
         let lp_lower_limit = (ref === "R410A" || ref === "R32") ? 5.5 : 3.0;
 
         let issuesHTML = "";
         let issuesText = "【AI 精準診斷報告】\n";
-        let statusLevel = "正常"; // 追蹤整體最高狀態 (正常 -> 注意 -> 異常)
+        let statusLevel = "正常"; 
 
         function updateStatus(newStatus) {
             if (newStatus === "異常") statusLevel = "異常";
@@ -296,13 +297,11 @@
             let tsuc = parseFloat(tsucStr), tdis = parseFloat(tdisStr);
             let sysIssues = [];
             
-            // 1. 冷媒吸入溫度判定 (> 15度C 提示注意)
             if(!isNaN(tsuc) && tsuc > 15) {
                 sysIssues.push({ level: "注意", err: `${sysName}冷媒吸入溫度過高 (${tsuc}°C > 15°C)`, sol: "【注意】吸氣過熱度偏高，請排查是否為膨脹閥開度不足、過濾器半堵、或冷媒充填量微漏減少。" });
                 updateStatus("注意");
             }
 
-            // 2. 壓縮機出口(排氣)溫度精密分級判定
             if(!isNaN(tdis)) {
                 if(tdis >= 100) {
                     sysIssues.push({ level: "異常", err: `${sysName}壓縮機出口溫度過高 (${tdis}°C >= 100°C)`, sol: "【🚨危險】排氣溫度已達危險臨界值！極易造成冷凍油碳化與壓縮機燒毀，請立刻停機，全面排查冷媒洩漏或電子膨脹閥故障！" });
@@ -313,13 +312,11 @@
                 }
             }
             
-            // 3. 高壓高溫基本判定
             if(!isNaN(hp) && hp > hp_upper_limit) {
                 sysIssues.push({ level: "注意", err: `${sysName}高壓過高 (${hp} kg/cm²)`, sol: "請排查熱水循環流量不足、冷凝換熱器結垢、或系統內冷媒充填過量。" });
                 updateStatus("注意");
             }
             
-            // 4. 低壓與環境溫聯動比對
             if(!isNaN(lp) && lp < lp_lower_limit) {
                 if(type === "AHP" && !isNaN(tsuc) && tsuc < 2) {
                     sysIssues.push({ level: "注意", err: `${sysName}運轉低壓偏低 (${lp} kg/cm²)，伴隨吸氣溫偏低 (${tsuc}°C)`, sol: "研判為低環境溫度運轉或蒸發器結霜。請確認自動除霜機制是否正常。" });
@@ -333,7 +330,6 @@
                 }
             }
             
-            // 5. 三相電流不平衡與額定電流超載動態診斷
             let r = parseFloat(curRStr), s = parseFloat(curSStr), t = parseFloat(curTStr);
             let hasCurrent = (!isNaN(r) || !isNaN(s) || !isNaN(t));
             
@@ -341,7 +337,6 @@
                 let validVals = [r, s, t].filter(v => !isNaN(v));
                 let maxCurrent = Math.max(...validVals);
                 
-                // 檢查是否超過額定電流 (超過 110% 視為過載)
                 if (!isNaN(ratedCurrent) && ratedCurrent > 0) {
                     if (maxCurrent > (ratedCurrent * 1.1)) {
                         sysIssues.push({ level: "注意", err: `${sysName}實測最高電流 (${maxCurrent}A) 超過額定電流 (${ratedCurrent}A) 的 110%`, sol: "【注意】壓縮機超載運轉。請檢查高壓端壓力是否過高、供電電壓是否偏低或壓縮機內部機械磨損。" });
@@ -349,7 +344,6 @@
                     }
                 }
 
-                // 三相不平衡率計算
                 if (phase === "三相" && !isNaN(r) && !isNaN(s) && !isNaN(t)) {
                     let avg = (r + s + t) / 3;
                     if(avg > 2.0) {
@@ -375,7 +369,6 @@
             }
         }
 
-        // 執行系統診斷
         analyzeSystem("A機", 
             document.getElementById("lp_a").value, document.getElementById("hp_a").value, 
             document.getElementById("tsuc_a").value, document.getElementById("tdis_a").value,
@@ -387,7 +380,6 @@
             document.getElementById("curr_b_r").value, document.getElementById("curr_b_s").value, document.getElementById("curr_b_t").value
         );
 
-        // 水側溫差診斷
         let h_in = parseFloat(document.getElementById("h_in").value);
         let h_out = parseFloat(document.getElementById("h_out").value);
         if (!isNaN(h_in) && !isNaN(h_out)) {
@@ -418,7 +410,6 @@
             }
         }
 
-        // 更新狀態下拉選單
         document.getElementById("rec_status").value = statusLevel;
 
         const diagBox = document.getElementById("diagnosis_result");
@@ -443,10 +434,9 @@
         saveBtn.innerText = "⏳ 多圖雲端同步中...";
 
         const now = new Date();
-        const localDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const localDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')} ${String(now.getMinutes()).padStart(2, '0')}`;
         const uploadedPhotosArray = currentBase64Photos.map(p => p.replace(/^data:image\/\w+;base64,/, ""));
 
-        // 本地端紀錄 (包含前端專用額定電流，方便師傅之後在手機查歷史)
         const record = {
             id: Date.now(),
             date: localDateStr,
@@ -458,7 +448,7 @@
             volt: document.getElementById("rec_volt").value, 
             status: document.getElementById("rec_status").value, 
             notes: document.getElementById("rec_notes").value.trim(),
-            rated_cur: document.getElementById("local_rated_current").value, // 僅限本地
+            rated_cur: document.getElementById("local_rated_current").value, 
             cur_a: [document.getElementById("curr_a_r").value, document.getElementById("curr_a_s").value, document.getElementById("curr_a_t").value],
             cur_b: [document.getElementById("curr_b_r").value, document.getElementById("curr_b_s").value, document.getElementById("curr_b_t").value],
             sys_a: [document.getElementById("lp_a").value, document.getElementById("hp_a").value, document.getElementById("tsuc_a").value, document.getElementById("tdis_a").value],
@@ -467,7 +457,6 @@
             photos: currentBase64Photos 
         };
 
-        // 核心安全機制：深度拷貝並【刪除額定電流欄位】，不輸出到 Google Apps Script 雲端後台表單
         const syncPayload = JSON.parse(JSON.stringify(record));
         delete syncPayload.rated_cur; 
         syncPayload.photos = uploadedPhotosArray;
@@ -575,7 +564,6 @@
     function exportToCSV() {
         let records = JSON.parse(localStorage.getItem("hp_ai_records_v7")) || [];
         if (!records.length) return alert("無資料");
-        // 欄位定義完全不包含 rated_current 欄位，確保導出的報表保持原始格式
         let csv = "\uFEFF日期,客戶,型號,型式,冷媒,電源,電壓,A低壓,A高壓,A吸氣,A排氣,A_R電流,A_S電流,A_T電流,B低壓,B高壓,B吸氣,B排氣,B_R電流,B_S電流,B_T電流,水源入水,水源出水,熱水入水,熱水出水,狀態,診斷與備註\n";
         records.forEach(r => csv += `"${r.date}","${r.customer}","${r.model}","${r.type}","${r.ref}","${r.phase}","${r.volt}","${r.sys_a[0]}","${r.sys_a[1]}","${r.sys_a[2]}","${r.sys_a[3]}","${r.cur_a[0]}","${r.cur_a[1]}","${r.cur_a[2]}","${r.sys_b[0]}","${r.sys_b[1]}","${r.sys_b[2]}","${r.sys_b[3]}","${r.cur_b[0]}","${r.cur_b[1]}","${r.cur_b[2]}","${r.water[0]}","${r.water[1]}","${r.water[2]}","${r.water[3]}","${r.status}","${(r.notes||"").replace(/"/g,'""')}"\n`);
         const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));

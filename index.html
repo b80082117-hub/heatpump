@@ -60,7 +60,8 @@
         .img-preview { width: 65px; height: 65px; object-fit: cover; border-radius: 6px; border: 1px solid #475569; cursor: pointer; }
         
         .chart-box { background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #334155; margin-bottom: 20px; }
-        .record-card { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px; margin-bottom: 15px; position: relative; }
+        .record-card { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px; margin-bottom: 15px; position: relative; cursor: pointer; transition: border-color 0.2s; }
+        .record-card:hover { border-color: #38bdf8; }
         .record-header { display: flex; justify-content: space-between; border-bottom: 1px dashed #334155; padding-bottom: 8px; margin-bottom: 10px; }
         .customer-name { font-size: 15px; font-weight: bold; color: #38bdf8; }
         .record-date { color: #94a3b8; font-size: 12px; }
@@ -113,7 +114,7 @@
 
     <!-- 表單區 -->
     <div class="grid-3">
-        <!-- 欄位一：案場與設備項目管理 -->
+        <!-- 欄位一：案場與設備項目管理 (已刪除下拉選單) -->
         <div class="card-box">
             <h2>📝 設備項目管理</h2>
 
@@ -169,13 +170,13 @@
                 <input type="number" id="local_rated_current" step="0.1" placeholder="例如：22">
             </div>
 
-            <!-- 操作按鈕第一排：儲存修改 + 新增為新設備 -->
+            <!-- 操作按鈕第一排 -->
             <div class="btn-action-group">
                 <button class="btn-sm btn-blue" onclick="saveRecord()">儲存修改</button>
                 <button class="btn-sm btn-green" onclick="saveRecord()">新增為新設備</button>
             </div>
             
-            <!-- 操作按鈕第二排：清除/刪除輸入 + 生成專屬 QR Code -->
+            <!-- 操作按鈕第二排 -->
             <div class="btn-action-group">
                 <button class="btn-sm btn-red" onclick="clearForm()">🗑️ 清除/刪除輸入</button>
                 <button class="btn-sm btn-purple" onclick="generateMachineQR()">📱 生成專屬 QR Code</button>
@@ -250,7 +251,7 @@
                 <select id="rec_status">
                     <option value="正常">✅ 全機運轉正常</option>
                     <option value="注意">⚠️ 需注意/局部異常</option>
-                    <option value="異常">❌ 嚴重故障/全面停機</option>
+                    <option value="異常">❌ 嚴重的故障/全面停機</option>
                 </select>
             </div>
             <div class="form-group">
@@ -354,6 +355,24 @@
     }
 
     function handleModelSearch() { renderRecords(); }
+
+    // 點擊歷史卡片可快速將設備資料載入上方表單
+    function loadRecordToForm(recId) {
+        const target = globalRecords.find(r => r.id === recId || String(r.id) === String(recId));
+        if (!target) return;
+
+        document.getElementById("rec_customer").value = getProp(target, ['customer', '案場', '客戶名稱']);
+        document.getElementById("rec_model").value = getProp(target, ['model', '機號', '型號']);
+        document.getElementById("rec_type").value = getProp(target, ['type', '熱泵型態']) || "AHP";
+        document.getElementById("rec_ref").value = getProp(target, ['ref', '冷媒種類']) || "R417A";
+        document.getElementById("rec_capacity").value = getProp(target, ['capacity', '容量']) || "";
+        document.getElementById("rec_phase").value = getProp(target, ['phase', '電源相數']) || "三相";
+        document.getElementById("rec_volt").value = getProp(target, ['volt', '工作電壓']) || "380V";
+        document.getElementById("local_rated_current").value = getProp(target, ['rated_cur', '額定電流']) || "";
+        
+        onTypeChange();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     function previewAndCompressImages(input) {
         const previewDiv = document.getElementById("photo_previews");
@@ -646,7 +665,7 @@
             if (status === "注意") badgeClass = "badge-warning";
             if (status === "異常") badgeClass = "badge-danger";
 
-            html += `<div class="record-card">
+            html += `<div class="record-card" onclick="loadRecordToForm(${r.id})" title="點擊載入此設備資料至上方表單">
                 <div class="record-header">
                     <span class="customer-name">${customer} (${model || '未填機號'})</span>
                     <span class="record-date">${date}</span>
@@ -732,7 +751,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `檢修履歷_${new Date().toISOString().slice(0,10)}.csv`;
+        a.download = `碩豐熱泵檢修履歷_${new Date().toISOString().slice(0,10)}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

@@ -147,7 +147,7 @@
                 </div>
             </div>
 
-            <!-- 新增：熱泵制熱量(AHP) / 吸熱量(WHP/AWHP) 欄位 -->
+            <!-- 熱泵制熱量(AHP) / 吸熱量(WHP/AWHP) 欄位 -->
             <div class="form-group">
                 <label id="lbl_capacity">🔥 熱泵制熱量 (kW)：</label>
                 <input type="number" id="rec_capacity" step="0.1" placeholder="例如：35.5">
@@ -331,7 +331,6 @@
         }
     }
 
-    // 取得物件欄位相容值
     function getProp(obj, keys) {
         if (!obj) return "";
         for (let k of keys) {
@@ -554,7 +553,7 @@
             model: document.getElementById("rec_model").value.trim(), 
             type: document.getElementById("rec_type").value, 
             ref: document.getElementById("rec_ref").value, 
-            capacity: document.getElementById("rec_capacity").value, // 制熱/吸熱量
+            capacity: document.getElementById("rec_capacity").value,
             phase: document.getElementById("rec_phase").value, 
             volt: document.getElementById("rec_volt").value, 
             status: document.getElementById("rec_status").value, 

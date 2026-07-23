@@ -32,14 +32,14 @@
         select:focus, input:focus, textarea:focus { border-color: #38bdf8; outline: none; }
         textarea { resize: vertical; height: 110px; }
         
-        /* 按鈕風格 (並排 grid) */
+        /* 按鈕風格 (參考鍋爐介面) */
         .btn-action-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; margin-bottom: 10px; }
-        .btn-sm { padding: 10px; font-size: 13px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; color: white; transition: opacity 0.2s; width: 100%; box-sizing: border-box; }
+        .btn-sm { padding: 9px; font-size: 13px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; color: white; transition: opacity 0.2s; }
         .btn-sm:hover { opacity: 0.9; }
         .btn-blue { background: #0284c7; }
         .btn-green { background: #10b981; }
-        .btn-red { background: #9f1239; }
-        .btn-purple { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+        .btn-red { background: #9f1239; width: 100%; margin-bottom: 10px; }
+        .btn-purple { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); width: 100%; font-size: 14px; padding: 10px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
 
         .btn-group { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
         button.btn-main { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: all 0.2s; min-width: 140px; }
@@ -48,9 +48,11 @@
         .btn-export { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; }
         .btn-clear { background: #475569; color: white; }
         
+        /* 設備卡片式邊框 */
         .card-box { background: #0f172a; padding: 16px; border-radius: 12px; border: 1px solid #1e293b; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
         .sub-section-box { background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 10px; }
 
+        /* QR Code 顯示區 (完美還原鍋爐風格) */
         .qr-section { background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #4f46e5; margin-top: 12px; display: none; text-align: center; }
         .qr-title { font-size: 13px; font-weight: bold; color: #a5b4fc; margin-bottom: 8px; }
         #qrcode-canvas { display: inline-block; background: white; padding: 10px; border-radius: 10px; margin-top: 5px; }
@@ -60,8 +62,7 @@
         .img-preview { width: 65px; height: 65px; object-fit: cover; border-radius: 6px; border: 1px solid #475569; cursor: pointer; }
         
         .chart-box { background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #334155; margin-bottom: 20px; }
-        .record-card { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px; margin-bottom: 15px; position: relative; cursor: pointer; transition: border-color 0.2s; }
-        .record-card:hover { border-color: #38bdf8; }
+        .record-card { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px; margin-bottom: 15px; position: relative; }
         .record-header { display: flex; justify-content: space-between; border-bottom: 1px dashed #334155; padding-bottom: 8px; margin-bottom: 10px; }
         .customer-name { font-size: 15px; font-weight: bold; color: #38bdf8; }
         .record-date { color: #94a3b8; font-size: 12px; }
@@ -114,10 +115,10 @@
 
     <!-- 表單區 -->
     <div class="grid-3">
-        <!-- 欄位一：案場與設備項目管理 (已刪除下拉選單) -->
+        <!-- 欄位一：案場與設備項目管理 (參考鍋爐優化風格) -->
         <div class="card-box">
             <h2>📝 設備項目管理</h2>
-
+            
             <div class="form-group">
                 <label>客戶 / 案場名稱：</label>
                 <input type="text" id="rec_customer" placeholder="例如：碩豐大飯店">
@@ -131,7 +132,7 @@
             <div class="grid-2">
                 <div class="form-group">
                     <label>熱泵型態：</label>
-                    <select id="rec_type" onchange="onTypeChange()">
+                    <select id="rec_type" onchange="toggleWaterSection()">
                         <option value="AHP">AHP (空氣源)</option>
                         <option value="WHP">WHP (水源型)</option>
                         <option value="AWHP">AWHP (全效型)</option>
@@ -146,12 +147,6 @@
                         <option value="R134a">R134a</option>
                     </select>
                 </div>
-            </div>
-
-            <!-- 熱泵制熱量(AHP) / 吸熱量(WHP/AWHP) 欄位 -->
-            <div class="form-group">
-                <label id="lbl_capacity">🔥 熱泵制熱量 (kW)：</label>
-                <input type="number" id="rec_capacity" step="0.1" placeholder="例如：35.5">
             </div>
 
             <div class="grid-2">
@@ -170,17 +165,13 @@
                 <input type="number" id="local_rated_current" step="0.1" placeholder="例如：22">
             </div>
 
-            <!-- 操作按鈕第一排 -->
+            <!-- 操作按鈕群組 (比照鍋爐版面) -->
             <div class="btn-action-group">
                 <button class="btn-sm btn-blue" onclick="saveRecord()">儲存修改</button>
                 <button class="btn-sm btn-green" onclick="saveRecord()">新增為新設備</button>
             </div>
-            
-            <!-- 操作按鈕第二排 -->
-            <div class="btn-action-group">
-                <button class="btn-sm btn-red" onclick="clearForm()">🗑️ 清除/刪除輸入</button>
-                <button class="btn-sm btn-purple" onclick="generateMachineQR()">📱 生成專屬 QR Code</button>
-            </div>
+            <button class="btn-sm btn-red" onclick="clearForm()">🗑️ 清除/刪除輸入</button>
+            <button class="btn-sm btn-purple" onclick="generateMachineQR()">📱 生成專屬 QR Code</button>
 
             <!-- 二維碼展開區 -->
             <div id="qr_container" class="qr-section">
@@ -251,7 +242,7 @@
                 <select id="rec_status">
                     <option value="正常">✅ 全機運轉正常</option>
                     <option value="注意">⚠️ 需注意/局部異常</option>
-                    <option value="異常">❌ 嚴重的故障/全面停機</option>
+                    <option value="異常">❌ 嚴重故障/全面停機</option>
                 </select>
             </div>
             <div class="form-group">
@@ -306,24 +297,21 @@
 
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
-        const deviceId = urlParams.get('m') || urlParams.get('id') || urlParams.get('b');
+        const deviceId = urlParams.get('m') || urlParams.get('id');
         if (deviceId) {
             document.getElementById("filter_notice").style.display = "flex";
             document.getElementById("filtered_id").innerText = deviceId;
             document.getElementById("rec_model").value = deviceId;
         }
-        onTypeChange();
+        toggleWaterSection();
         fetchCloudRecords();
     };
 
     function fetchCloudRecords() {
         if (typeof google !== 'undefined' && google.script && google.script.run) {
             google.script.run.withSuccessHandler(function(data) {
-                if (typeof data === "string") {
-                    try { globalRecords = JSON.parse(data); } catch(e) { globalRecords = []; }
-                } else {
-                    globalRecords = data || [];
-                }
+                if (typeof data === "string") data = JSON.parse(data);
+                globalRecords = data || [];
                 renderRecords();
             }).getUsersData();
         } else {
@@ -332,47 +320,12 @@
         }
     }
 
-    function getProp(obj, keys) {
-        if (!obj) return "";
-        for (let k of keys) {
-            if (obj[k] !== undefined && obj[k] !== null && obj[k] !== "") {
-                return obj[k];
-            }
-        }
-        return "";
-    }
-
-    function onTypeChange() {
+    function toggleWaterSection() {
         const type = document.getElementById("rec_type").value;
-        const lbl = document.getElementById("lbl_capacity");
-        if (type === "AHP") {
-            lbl.innerText = "🔥 熱泵制熱量 (kW)：";
-            document.getElementById("source_water_section").style.display = "none";
-        } else {
-            lbl.innerText = "💧 熱泵吸熱量 (kW)：";
-            document.getElementById("source_water_section").style.display = "block";
-        }
+        document.getElementById("source_water_section").style.display = (type === "WHP" || type === "AWHP") ? "block" : "none";
     }
 
     function handleModelSearch() { renderRecords(); }
-
-    // 點擊歷史卡片可快速將設備資料載入上方表單
-    function loadRecordToForm(recId) {
-        const target = globalRecords.find(r => r.id === recId || String(r.id) === String(recId));
-        if (!target) return;
-
-        document.getElementById("rec_customer").value = getProp(target, ['customer', '案場', '客戶名稱']);
-        document.getElementById("rec_model").value = getProp(target, ['model', '機號', '型號']);
-        document.getElementById("rec_type").value = getProp(target, ['type', '熱泵型態']) || "AHP";
-        document.getElementById("rec_ref").value = getProp(target, ['ref', '冷媒種類']) || "R417A";
-        document.getElementById("rec_capacity").value = getProp(target, ['capacity', '容量']) || "";
-        document.getElementById("rec_phase").value = getProp(target, ['phase', '電源相數']) || "三相";
-        document.getElementById("rec_volt").value = getProp(target, ['volt', '工作電壓']) || "380V";
-        document.getElementById("local_rated_current").value = getProp(target, ['rated_cur', '額定電流']) || "";
-        
-        onTypeChange();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
 
     function previewAndCompressImages(input) {
         const previewDiv = document.getElementById("photo_previews");
@@ -399,7 +352,7 @@
                     pImg.src = b64; pImg.className = "img-preview"; pImg.onclick = function(){window.open(this.src)};
                     previewDiv.appendChild(pImg);
                 };
-                img.src = e.result;
+                img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         });
@@ -572,7 +525,6 @@
             model: document.getElementById("rec_model").value.trim(), 
             type: document.getElementById("rec_type").value, 
             ref: document.getElementById("rec_ref").value, 
-            capacity: document.getElementById("rec_capacity").value,
             phase: document.getElementById("rec_phase").value, 
             volt: document.getElementById("rec_volt").value, 
             status: document.getElementById("rec_status").value, 
@@ -588,7 +540,7 @@
 
         if (typeof google !== 'undefined' && google.script && google.script.run) {
             google.script.run.withSuccessHandler(function(res) {
-                alert("📥 數據已成功寫入 Google Sheets 雲端試算表！");
+                alert("📥 數據與現場照片已成功寫入 Google Sheets 雲端試算表！");
                 finalizeSave();
             }).doPost({ postData: { contents: JSON.stringify(record) } });
         } else {
@@ -610,153 +562,143 @@
         document.getElementById("photo_previews").innerHTML = "";
         document.getElementById("qr_container").style.display = "none";
         document.getElementById("diagnosis_result").style.display = "none";
-        currentBase64Photos = [];
+        currentBase64Photos = []; 
+        toggleWaterSection();
     }
 
     function renderRecords() {
-        const listDiv = document.getElementById("records_list");
+        const list = document.getElementById("records_list");
         const searchInput = document.getElementById("search_input").value.toLowerCase();
+        const modelInput = document.getElementById("rec_model").value.toLowerCase();
         const urlParams = new URLSearchParams(window.location.search);
-        const deviceIdFilter = urlParams.get('m') || urlParams.get('id') || urlParams.get('b');
+        const filterId = urlParams.get('m') || urlParams.get('id');
+        
+        let filtered = globalRecords;
 
-        let filtered = globalRecords.filter(r => {
-            const customer = getProp(r, ['customer', '案場', '客戶名稱']);
-            const model = getProp(r, ['model', '機號', '型號']);
-            const notes = getProp(r, ['notes', '備註', '處置說明']);
-            
-            if (deviceIdFilter && model !== deviceIdFilter) return false;
+        if (filterId) {
+            filtered = filtered.filter(r => r.model && r.model.toLowerCase() === filterId.toLowerCase());
+        } else if (modelInput) {
+            filtered = filtered.filter(r => r.model && r.model.toLowerCase().includes(modelInput));
+        } else if (searchInput) {
+            filtered = filtered.filter(r => (r.customer && r.customer.toLowerCase().includes(searchInput)) || (r.model && r.model.toLowerCase().includes(searchInput)) || (r.notes && r.notes.toLowerCase().includes(searchInput)));
+        }
 
-            if (!searchInput) return true;
-            return String(customer).toLowerCase().includes(searchInput) ||
-                   String(model).toLowerCase().includes(searchInput) ||
-                   String(notes).toLowerCase().includes(searchInput);
-        });
-
+        document.getElementById("kpi_total").innerText = filtered.length;
+        document.getElementById("kpi_normal").innerText = filtered.filter(r => r.status === "正常").length;
+        document.getElementById("kpi_warning").innerText = filtered.filter(r => r.status === "注意").length;
+        document.getElementById("kpi_danger").innerText = filtered.filter(r => r.status === "異常").length;
         document.getElementById("rec_count").innerText = filtered.length;
 
-        // 更新 KPI
-        let total = filtered.length;
-        let normal = filtered.filter(r => getProp(r, ['status', '狀態']) === "正常").length;
-        let warning = filtered.filter(r => getProp(r, ['status', '狀態']) === "注意").length;
-        let danger = filtered.filter(r => getProp(r, ['status', '狀態']) === "異常").length;
+        list.innerHTML = filtered.length === 0 ? `<p style="text-align:center; color:#64748b;">尚無符合的檢修紀錄</p>` : "";
 
-        document.getElementById("kpi_total").innerText = total;
-        document.getElementById("kpi_normal").innerText = normal;
-        document.getElementById("kpi_warning").innerText = warning;
-        document.getElementById("kpi_danger").innerText = danger;
-
-        if (filtered.length === 0) {
-            listDiv.innerHTML = `<div style="text-align: center; color: #64748b; padding: 20px;">尚無相關檢修紀錄</div>`;
-            if (historyChartInstance) { historyChartInstance.destroy(); }
-            return;
-        }
-
-        let html = "";
-        filtered.sort((a,b) => b.id - a.id).forEach(r => {
-            const customer = getProp(r, ['customer', '案場', '客戶名稱']);
-            const model = getProp(r, ['model', '機號', '型號']);
-            const type = getProp(r, ['type', '熱泵型態']);
-            const ref = getProp(r, ['ref', '冷媒種類']);
-            const status = getProp(r, ['status', '狀態']);
-            const notes = getProp(r, ['notes', '備註', '處置說明']);
-            const date = getProp(r, ['date', '日期']);
-
-            let badgeClass = "badge-normal";
-            if (status === "注意") badgeClass = "badge-warning";
-            if (status === "異常") badgeClass = "badge-danger";
-
-            html += `<div class="record-card" onclick="loadRecordToForm(${r.id})" title="點擊載入此設備資料至上方表單">
-                <div class="record-header">
-                    <span class="customer-name">${customer} (${model || '未填機號'})</span>
-                    <span class="record-date">${date}</span>
-                </div>
-                <div>
-                    <span class="badge ${badgeClass}">${status}</span>
-                    <span class="data-tag"><span class="tag-title">型態:</span> ${type || '-'}</span>
-                    <span class="data-tag"><span class="tag-title">冷媒:</span> ${ref || '-'}</span>
-                </div>
-                <div style="margin-top: 8px; font-size: 13px; color: #cbd5e1; white-space: pre-wrap;">${notes || '無備註說明'}</div>
-            </div>`;
+        filtered.forEach(r => {
+            let badge = r.status === "正常" ? "badge-normal" : (r.status === "注意" ? "badge-warning" : "badge-danger");
+            let pHTML = "";
+            if (r.photos && r.photos.length > 0) {
+                pHTML = `<div class="preview-container">` + 
+                    r.photos.map(p => {
+                        let srcStr = p.startsWith('data:') ? p : 'data:image/jpeg;base64,' + p;
+                        return `<img src="${srcStr}" class="img-preview" onclick="window.open(this.src)">`;
+                    }).join('') + 
+                `</div>`;
+            }
+            
+            list.innerHTML += `
+                <div class="record-card">
+                    <div class="record-header"><span class="customer-name">🏢 ${r.customer} (機號: ${r.model||'未填'})</span><span class="record-date">📅 ${r.date}</span></div>
+                    <div>
+                        <span class="badge ${badge}">${r.status}</span>
+                        <span class="data-tag">型式: ${r.type}</span>
+                        <span class="data-tag">冷媒: ${r.ref}</span>
+                        <span class="data-tag">電源: ${r.phase}/${r.volt}</span>
+                        ${r.rated_cur ? `<span class="data-tag" style="border-color:#38bdf8;">額定: ${r.rated_cur}A</span>` : ''}
+                    </div>
+                    <div style="margin-top:8px; font-size:13px; color:#cbd5e1;">
+                        <div><span class="tag-title">⚡ 電流:</span> A機(R:${r.cur_a?.[0]||'-'}, S:${r.cur_a?.[1]||'-'}, T:${r.cur_a?.[2]||'-'}) | B機(R:${r.cur_b?.[0]||'-'}, S:${r.cur_b?.[1]||'-'}, T:${r.cur_b?.[2]||'-'})</div>
+                        <div><span class="tag-title">🌀 冷媒:</span> A機(低:${r.sys_a?.[0]||'-'}/高:${r.sys_a?.[1]||'-'}) | B機(低:${r.sys_b?.[0]||'-'}/高:${r.sys_b?.[1]||'-'})</div>
+                        <div><span class="tag-title">🔥 熱水側:</span> 進:${r.water?.[2]||'-'}°C / 出:${r.water?.[3]||'-'}°C</div>
+                        ${(r.type === 'WHP' || r.type === 'AWHP') ? `<div><span class="tag-title">💧 水源側:</span> 進:${r.water?.[0]||'-'}°C / 出:${r.water?.[1]||'-'}°C</div>` : ''}
+                        ${r.notes ? `<div style="margin-top:5px; white-space:pre-wrap; background:#1e293b; padding:8px; border-radius:6px; color:#94a3b8; border:1px solid #334155;">📝 ${r.notes}</div>` : ''}
+                    </div>
+                    ${pHTML}
+                </div>`;
         });
-        listDiv.innerHTML = html;
-        updateChartData(filtered);
+
+        renderChart(filtered);
     }
 
-    function updateChartData(dataSet) {
-        const data = dataSet || globalRecords;
-        if (!data || data.length === 0) return;
-
-        const chartType = document.getElementById("chart_type_select").value;
-        const labels = data.map(r => getProp(r, ['date', '日期'])).reverse();
+    function renderChart(recordsData) {
+        const ctx = document.getElementById('historyChart').getContext('2d');
+        const chartType = document.getElementById('chart_type_select').value;
         
+        const sorted = [...recordsData].sort((a,b) => new Date(a.date) - new Date(b.date));
+        const labels = sorted.map(r => r.date ? r.date.split(' ')[0] : '無日期');
+
         let datasets = [];
+
         if (chartType === "press") {
-            const lpA = data.map(r => { const sys = r.sys_a || []; return parseFloat(sys[0]) || null; }).reverse();
-            const hpA = data.map(r => { const sys = r.sys_a || []; return parseFloat(sys[1]) || null; }).reverse();
-            const lpB = data.map(r => { const sys = r.sys_b || []; return parseFloat(sys[0]) || null; }).reverse();
-            const hpB = data.map(r => { const sys = r.sys_b || []; return parseFloat(sys[1]) || null; }).reverse();
-
             datasets = [
-                { label: 'A機 低壓', data: lpA, borderColor: '#38bdf8', backgroundColor: '#38bdf8', tension: 0.1 },
-                { label: 'A機 高壓', data: hpA, borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.1 },
-                { label: 'B機 低壓', data: lpB, borderColor: '#fef08a', backgroundColor: '#fef08a', tension: 0.1 },
-                { label: 'B機 高壓', data: hpB, borderColor: '#eab308', backgroundColor: '#eab308', tension: 0.1 }
+                { label: 'A機 高壓(kg/cm²)', data: sorted.map(r => parseFloat(r.sys_a?.[1]) || null), borderColor: '#f43f5e', backgroundColor: '#f43f5e', tension: 0.3 },
+                { label: 'A機 低壓(kg/cm²)', data: sorted.map(r => parseFloat(r.sys_a?.[0]) || null), borderColor: '#38bdf8', backgroundColor: '#38bdf8', tension: 0.3 },
+                { label: 'B機 高壓(kg/cm²)', data: sorted.map(r => parseFloat(r.sys_b?.[1]) || null), borderColor: '#fbbf24', backgroundColor: '#fbbf24', borderDash: [5, 5], tension: 0.3 },
+                { label: 'B機 低壓(kg/cm²)', data: sorted.map(r => parseFloat(r.sys_b?.[0]) || null), borderColor: '#34d399', backgroundColor: '#34d399', borderDash: [5, 5], tension: 0.3 }
             ];
-        } else {
-            const hIn = data.map(r => { const w = r.water || []; return parseFloat(w[2]) || null; }).reverse();
-            const hOut = data.map(r => { const w = r.water || []; return parseFloat(w[3]) || null; }).reverse();
-            const wIn = data.map(r => { const w = r.water || []; return parseFloat(w[0]) || null; }).reverse();
-            const wOut = data.map(r => { const w = r.water || []; return parseFloat(w[1]) || null; }).reverse();
-
+        } else if (chartType === "temp") {
             datasets = [
-                { label: '熱水進水溫', data: hIn, borderColor: '#f43f5e', backgroundColor: '#f43f5e', tension: 0.1 },
-                { label: '熱水出水溫', data: hOut, borderColor: '#fb7185', backgroundColor: '#fb7185', tension: 0.1 },
-                { label: '水源進水溫', data: wIn, borderColor: '#22d3ee', backgroundColor: '#22d3ee', tension: 0.1 },
-                { label: '水源出水溫', data: wOut, borderColor: '#67e8f9', backgroundColor: '#67e8f9', tension: 0.1 }
+                { label: '熱水進水(°C)', data: sorted.map(r => parseFloat(r.water?.[2]) || null), borderColor: '#fb923c', backgroundColor: '#fb923c', tension: 0.3 },
+                { label: '熱水出水(°C)', data: sorted.map(r => parseFloat(r.water?.[3]) || null), borderColor: '#f43f5e', backgroundColor: '#f43f5e', tension: 0.3 },
+                { label: '水源進水(°C)', data: sorted.map(r => parseFloat(r.water?.[0]) || null), borderColor: '#38bdf8', backgroundColor: '#38bdf8', tension: 0.3 },
+                { label: '水源出水(°C)', data: sorted.map(r => parseFloat(r.water?.[1]) || null), borderColor: '#818cf8', backgroundColor: '#818cf8', tension: 0.3 }
             ];
         }
 
-        const ctx = document.getElementById('historyChart').getContext('2d');
-        if (historyChartInstance) { historyChartInstance.destroy(); }
-        
+        if (historyChartInstance) historyChartInstance.destroy();
+
         historyChartInstance = new Chart(ctx, {
             type: 'line',
-            data: { labels: labels, datasets: datasets },
+            data: { labels, datasets },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#f1f5f9', font: { size: 11 } } } },
                 scales: {
-                    y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
-                    x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
-                },
-                plugins: { legend: { labels: { color: '#f1f5f9' } } }
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                }
             }
         });
     }
 
+    function updateChartData() { renderRecords(); }
+
     function exportToCSV() {
-        if (!globalRecords || globalRecords.length === 0) { alert("目前沒有可匯出的紀錄！"); return; }
-        let csvContent = "\uFEFF檢修日期,案場名稱,主機型號,熱泵型態,冷媒種類,系統狀態,備註說明\n";
+        if (globalRecords.length === 0) { alert("目前尚無數據可供匯出！"); return; }
+        let csvContent = "\uFEFF";
+        csvContent += "日期,案場名稱,主機型號,型式,冷媒,電源相數,工作電壓,狀態,額定電流(A),A機R相,A機S相,A機T相,B機R相,B機S相,B機T相,A機低壓,A機高壓,A機吸氣,A機排氣,B機低壓,B機高壓,B機吸氣,B機排氣,熱水進水,熱水出水,水源進水,水源出水,備註\n";
+
         globalRecords.forEach(r => {
-            const date = getProp(r, ['date', '日期']);
-            const customer = getProp(r, ['customer', '案場', '客戶名稱']);
-            const model = getProp(r, ['model', '機號', '型號']);
-            const type = getProp(r, ['type', '熱泵型態']);
-            const ref = getProp(r, ['ref', '冷媒種類']);
-            const status = getProp(r, ['status', '狀態']);
-            const notes = String(getProp(r, ['notes', '備註', '處置說明'])).replace(/[\n\r]+/g, " ");
-            csvContent += `"${date}","${customer}","${model}","${type}","${ref}","${status}","${notes}"\n`;
+            let row = [
+                `"${r.date}"`, `"${r.customer}"`, `"${r.model||''}"`, `"${r.type}"`, `"${r.ref}"`,
+                `"${r.phase}"`, `"${r.volt}"`, `"${r.status}"`, `"${r.rated_cur||''}"`,
+                `"${r.cur_a?.[0]||''}"`, `"${r.cur_a?.[1]||''}"`, `"${r.cur_a?.[2]||''}"`,
+                `"${r.cur_b?.[0]||''}"`, `"${r.cur_b?.[1]||''}"`, `"${r.cur_b?.[2]||''}"`,
+                `"${r.sys_a?.[0]||''}"`, `"${r.sys_a?.[1]||''}"`, `"${r.sys_a?.[2]||''}"`, `"${r.sys_a?.[3]||''}"`,
+                `"${r.sys_b?.[0]||''}"`, `"${r.sys_b?.[1]||''}"`, `"${r.sys_b?.[2]||''}"`, `"${r.sys_b?.[3]||''}"`,
+                `"${r.water?.[2]||''}"`, `"${r.water?.[3]||''}"`, `"${r.water?.[0]||''}"`, `"${r.water?.[1]||''}"`,
+                `"${(r.notes||'').replace(/"/g, '""')}"`
+            ];
+            csvContent += row.join(",") + "\n";
         });
+
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `碩豐熱泵檢修履歷_${new Date().toISOString().slice(0,10)}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `碩豐熱泵戰情維修履歷_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 </script>
-
 </body>
 </html>

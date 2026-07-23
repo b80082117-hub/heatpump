@@ -591,185 +591,153 @@
         document.getElementById("photo_previews").innerHTML = "";
         document.getElementById("qr_container").style.display = "none";
         document.getElementById("diagnosis_result").style.display = "none";
-        currentBase64Photos = []; 
-        onTypeChange();
+        currentBase64Photos = [];
     }
 
     function renderRecords() {
-        const list = document.getElementById("records_list");
+        const listDiv = document.getElementById("records_list");
         const searchInput = document.getElementById("search_input").value.toLowerCase();
-        const modelInput = document.getElementById("rec_model").value.toLowerCase();
         const urlParams = new URLSearchParams(window.location.search);
-        const filterId = urlParams.get('m') || urlParams.get('id') || urlParams.get('b');
-        
-        let records = globalRecords;
-        if (typeof records === "string") {
-            try { records = JSON.parse(records); } catch(e) { records = []; }
-        }
+        const deviceIdFilter = urlParams.get('m') || urlParams.get('id') || urlParams.get('b');
 
-        let filtered = records || [];
+        let filtered = globalRecords.filter(r => {
+            const customer = getProp(r, ['customer', '案場', '客戶名稱']);
+            const model = getProp(r, ['model', '機號', '型號']);
+            const notes = getProp(r, ['notes', '備註', '處置說明']);
+            
+            if (deviceIdFilter && model !== deviceIdFilter) return false;
 
-        if (filterId) {
-            filtered = filtered.filter(r => {
-                let m = getProp(r, ["model", "Model", "主機型號", "機號", "id", "ID"]);
-                return m && String(m).toLowerCase() === filterId.toLowerCase();
-            });
-        } else if (modelInput) {
-            filtered = filtered.filter(r => {
-                let m = getProp(r, ["model", "Model", "主機型號", "機號", "id", "ID"]);
-                return m && String(m).toLowerCase().includes(modelInput);
-            });
-        } else if (searchInput) {
-            filtered = filtered.filter(r => {
-                let c = getProp(r, ["customer", "Customer", "客戶名稱", "案場名稱"]);
-                let m = getProp(r, ["model", "Model", "主機型號", "機號", "id", "ID"]);
-                let n = getProp(r, ["notes", "Notes", "備註", "維修紀錄"]);
-                return String(c).toLowerCase().includes(searchInput) || String(m).toLowerCase().includes(searchInput) || String(n).toLowerCase().includes(searchInput);
-            });
-        }
+            if (!searchInput) return true;
+            return String(customer).toLowerCase().includes(searchInput) ||
+                   String(model).toLowerCase().includes(searchInput) ||
+                   String(notes).toLowerCase().includes(searchInput);
+        });
 
-        document.getElementById("kpi_total").innerText = filtered.length;
-        document.getElementById("kpi_normal").innerText = filtered.filter(r => getProp(r, ["status", "Status", "狀態"]) === "正常").length;
-        document.getElementById("kpi_warning").innerText = filtered.filter(r => getProp(r, ["status", "Status", "狀態"]) === "注意").length;
-        document.getElementById("kpi_danger").innerText = filtered.filter(r => getProp(r, ["status", "Status", "狀態"]) === "異常").length;
         document.getElementById("rec_count").innerText = filtered.length;
 
-        list.innerHTML = filtered.length === 0 ? `<p style="text-align:center; color:#64748b;">尚無符合的檢修紀錄</p>` : "";
+        // 更新 KPI
+        let total = filtered.length;
+        let normal = filtered.filter(r => getProp(r, ['status', '狀態']) === "正常").length;
+        let warning = filtered.filter(r => getProp(r, ['status', '狀態']) === "注意").length;
+        let danger = filtered.filter(r => getProp(r, ['status', '狀態']) === "異常").length;
 
-        filtered.forEach(r => {
-            let status = getProp(r, ["status", "Status", "狀態"]) || "正常";
-            let badge = status === "正常" ? "badge-normal" : (status === "注意" ? "badge-warning" : "badge-danger");
-            let customer = getProp(r, ["customer", "Customer", "客戶名稱", "案場名稱"]);
-            let model = getProp(r, ["model", "Model", "主機型號", "機號", "id", "ID"]);
-            let date = getProp(r, ["date", "Date", "日期"]);
-            let notes = getProp(r, ["notes", "Notes", "備註", "維修紀錄"]);
-            let type = getProp(r, ["type", "Type", "熱泵型態"]);
-            let capacity = getProp(r, ["capacity", "Capacity", "制熱量", "吸熱量"]);
+        document.getElementById("kpi_total").innerText = total;
+        document.getElementById("kpi_normal").innerText = normal;
+        document.getElementById("kpi_warning").innerText = warning;
+        document.getElementById("kpi_danger").innerText = danger;
 
-            let pHTML = "";
-            let photos = r.photos || [];
-            if (photos && photos.length > 0) {
-                pHTML = `<div class="preview-container">` + 
-                    photos.map(p => {
-                        let srcStr = p.startsWith('data:') ? p : 'data:image/jpeg;base64,' + p;
-                        return `<img src="${srcStr}" class="img-preview" onclick="window.open(this.src)">`;
-                    }).join('') + 
-                `</div>`;
-            }
-            
-            let capText = "";
-            if (capacity) {
-                capText = type === "AHP" ? `制熱量: ${capacity}kW` : `吸熱量: ${capacity}kW`;
-            }
+        if (filtered.length === 0) {
+            listDiv.innerHTML = `<div style="text-align: center; color: #64748b; padding: 20px;">尚無相關檢修紀錄</div>`;
+            if (historyChartInstance) { historyChartInstance.destroy(); }
+            return;
+        }
 
-            list.innerHTML += `
-                <div class="record-card">
-                    <div class="record-header"><span class="customer-name">🏢 ${customer} (機號: ${model||'未填'})</span><span class="record-date">📅 ${date}</span></div>
-                    <div>
-                        <span class="badge ${badge}">${status}</span>
-                        <span class="data-tag">型式: ${type}</span>
-                        <span class="data-tag">冷媒: ${getProp(r, ["ref", "Ref"])}</span>
-                        ${capText ? `<span class="data-tag" style="border-color:#10b981;">${capText}</span>` : ''}
-                        <span class="data-tag">電源: ${getProp(r, ["phase", "Phase"])}/${getProp(r, ["volt", "Volt"])}</span>
-                        ${getProp(r, ["rated_cur", "RatedCur"]) ? `<span class="data-tag" style="border-color:#38bdf8;">額定: ${getProp(r, ["rated_cur", "RatedCur"])}A</span>` : ''}
-                    </div>
-                    <div style="margin-top:8px; font-size:13px; color:#cbd5e1;">
-                        <div><span class="tag-title">⚡ 電流:</span> A機(R:${r.cur_a?.[0]||'-'}, S:${r.cur_a?.[1]||'-'}, T:${r.cur_a?.[2]||'-'}) | B機(R:${r.cur_b?.[0]||'-'}, S:${r.cur_b?.[1]||'-'}, T:${r.cur_b?.[2]||'-'})</div>
-                        <div><span class="tag-title">🌀 冷媒:</span> A機(低:${r.sys_a?.[0]||'-'}/高:${r.sys_a?.[1]||'-'}) | B機(低:${r.sys_b?.[0]||'-'}/高:${r.sys_b?.[1]||'-'})</div>
-                        <div><span class="tag-title">🔥 熱水側:</span> 進:${r.water?.[2]||'-'}°C / 出:${r.water?.[3]||'-'}°C</div>
-                        ${(type === 'WHP' || type === 'AWHP') ? `<div><span class="tag-title">💧 水源側:</span> 進:${r.water?.[0]||'-'}°C / 出:${r.water?.[1]||'-'}°C</div>` : ''}
-                        ${notes ? `<div style="margin-top:5px; white-space:pre-wrap; background:#1e293b; padding:8px; border-radius:6px; color:#94a3b8; border:1px solid #334155;">📝 ${notes}</div>` : ''}
-                    </div>
-                    ${pHTML}
-                </div>`;
+        let html = "";
+        filtered.sort((a,b) => b.id - a.id).forEach(r => {
+            const customer = getProp(r, ['customer', '案場', '客戶名稱']);
+            const model = getProp(r, ['model', '機號', '型號']);
+            const type = getProp(r, ['type', '熱泵型態']);
+            const ref = getProp(r, ['ref', '冷媒種類']);
+            const status = getProp(r, ['status', '狀態']);
+            const notes = getProp(r, ['notes', '備註', '處置說明']);
+            const date = getProp(r, ['date', '日期']);
+
+            let badgeClass = "badge-normal";
+            if (status === "注意") badgeClass = "badge-warning";
+            if (status === "異常") badgeClass = "badge-danger";
+
+            html += `<div class="record-card">
+                <div class="record-header">
+                    <span class="customer-name">${customer} (${model || '未填機號'})</span>
+                    <span class="record-date">${date}</span>
+                </div>
+                <div>
+                    <span class="badge ${badgeClass}">${status}</span>
+                    <span class="data-tag"><span class="tag-title">型態:</span> ${type || '-'}</span>
+                    <span class="data-tag"><span class="tag-title">冷媒:</span> ${ref || '-'}</span>
+                </div>
+                <div style="margin-top: 8px; font-size: 13px; color: #cbd5e1; white-space: pre-wrap;">${notes || '無備註說明'}</div>
+            </div>`;
         });
-
-        renderChart(filtered);
+        listDiv.innerHTML = html;
+        updateChartData(filtered);
     }
 
-    function renderChart(recordsData) {
-        const ctx = document.getElementById('historyChart').getContext('2d');
-        const chartType = document.getElementById('chart_type_select').value;
+    function updateChartData(dataSet) {
+        const data = dataSet || globalRecords;
+        if (!data || data.length === 0) return;
+
+        const chartType = document.getElementById("chart_type_select").value;
+        const labels = data.map(r => getProp(r, ['date', '日期'])).reverse();
         
-        const sorted = [...recordsData].sort((a,b) => new Date(getProp(a, ["date", "Date"])) - new Date(getProp(b, ["date", "Date"])));
-        const labels = sorted.map(r => {
-            let d = getProp(r, ["date", "Date"]);
-            return d ? d.split(' ')[0] : '無日期';
-        });
-
         let datasets = [];
-
         if (chartType === "press") {
+            const lpA = data.map(r => { const sys = r.sys_a || []; return parseFloat(sys[0]) || null; }).reverse();
+            const hpA = data.map(r => { const sys = r.sys_a || []; return parseFloat(sys[1]) || null; }).reverse();
+            const lpB = data.map(r => { const sys = r.sys_b || []; return parseFloat(sys[0]) || null; }).reverse();
+            const hpB = data.map(r => { const sys = r.sys_b || []; return parseFloat(sys[1]) || null; }).reverse();
+
             datasets = [
-                { label: 'A機 高壓(kg/cm²)', data: sorted.map(r => parseFloat(r.sys_a?.[1]) || null), borderColor: '#f43f5e', backgroundColor: '#f43f5e', tension: 0.3 },
-                { label: 'A機 低壓(kg/cm²)', data: sorted.map(r => parseFloat(r.sys_a?.[0]) || null), borderColor: '#38bdf8', backgroundColor: '#38bdf8', tension: 0.3 },
-                { label: 'B機 高壓(kg/cm²)', data: sorted.map(r => parseFloat(r.sys_b?.[1]) || null), borderColor: '#fbbf24', backgroundColor: '#fbbf24', borderDash: [5, 5], tension: 0.3 },
-                { label: 'B機 低壓(kg/cm²)', data: sorted.map(r => parseFloat(r.sys_b?.[0]) || null), borderColor: '#34d399', backgroundColor: '#34d399', borderDash: [5, 5], tension: 0.3 }
+                { label: 'A機 低壓', data: lpA, borderColor: '#38bdf8', backgroundColor: '#38bdf8', tension: 0.1 },
+                { label: 'A機 高壓', data: hpA, borderColor: '#0284c7', backgroundColor: '#0284c7', tension: 0.1 },
+                { label: 'B機 低壓', data: lpB, borderColor: '#fef08a', backgroundColor: '#fef08a', tension: 0.1 },
+                { label: 'B機 高壓', data: hpB, borderColor: '#eab308', backgroundColor: '#eab308', tension: 0.1 }
             ];
-        } else if (chartType === "temp") {
+        } else {
+            const hIn = data.map(r => { const w = r.water || []; return parseFloat(w[2]) || null; }).reverse();
+            const hOut = data.map(r => { const w = r.water || []; return parseFloat(w[3]) || null; }).reverse();
+            const wIn = data.map(r => { const w = r.water || []; return parseFloat(w[0]) || null; }).reverse();
+            const wOut = data.map(r => { const w = r.water || []; return parseFloat(w[1]) || null; }).reverse();
+
             datasets = [
-                { label: '熱水進水(°C)', data: sorted.map(r => parseFloat(r.water?.[2]) || null), borderColor: '#fb923c', backgroundColor: '#fb923c', tension: 0.3 },
-                { label: '熱水出水(°C)', data: sorted.map(r => parseFloat(r.water?.[3]) || null), borderColor: '#f43f5e', backgroundColor: '#f43f5e', tension: 0.3 },
-                { label: '水源進水(°C)', data: sorted.map(r => parseFloat(r.water?.[0]) || null), borderColor: '#38bdf8', backgroundColor: '#38bdf8', tension: 0.3 },
-                { label: '水源出水(°C)', data: sorted.map(r => parseFloat(r.water?.[1]) || null), borderColor: '#818cf8', backgroundColor: '#818cf8', tension: 0.3 }
+                { label: '熱水進水溫', data: hIn, borderColor: '#f43f5e', backgroundColor: '#f43f5e', tension: 0.1 },
+                { label: '熱水出水溫', data: hOut, borderColor: '#fb7185', backgroundColor: '#fb7185', tension: 0.1 },
+                { label: '水源進水溫', data: wIn, borderColor: '#22d3ee', backgroundColor: '#22d3ee', tension: 0.1 },
+                { label: '水源出水溫', data: wOut, borderColor: '#67e8f9', backgroundColor: '#67e8f9', tension: 0.1 }
             ];
         }
 
-        if (historyChartInstance) historyChartInstance.destroy();
-
+        const ctx = document.getElementById('historyChart').getContext('2d');
+        if (historyChartInstance) { historyChartInstance.destroy(); }
+        
         historyChartInstance = new Chart(ctx, {
             type: 'line',
-            data: { labels, datasets },
+            data: { labels: labels, datasets: datasets },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#f1f5f9', font: { size: 11 } } } },
                 scales: {
-                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
-                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
-                }
+                    y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                    x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+                },
+                plugins: { legend: { labels: { color: '#f1f5f9' } } }
             }
         });
     }
 
-    function updateChartData() { renderRecords(); }
-
     function exportToCSV() {
-        if (globalRecords.length === 0) { alert("目前尚無數據可供匯出！"); return; }
-        let csvContent = "\uFEFF";
-        csvContent += "日期,案場名稱,主機型號,型式,冷媒,制熱/吸熱量(kW),電源相數,工作電壓,狀態,額定電流(A),A機R相,A機S相,A機T相,B機R相,B機S相,B機T相,A機低壓,A機高壓,A機吸氣,A機排氣,B機低壓,B機高壓,B機吸氣,B機排氣,熱水進水,熱水出水,水源進水,水源出水,備註\n";
-
+        if (!globalRecords || globalRecords.length === 0) { alert("目前沒有可匯出的紀錄！"); return; }
+        let csvContent = "\uFEFF檢修日期,案場名稱,主機型號,熱泵型態,冷媒種類,系統狀態,備註說明\n";
         globalRecords.forEach(r => {
-            let row = [
-                `"${getProp(r, ["date", "Date"])}"`, 
-                `"${getProp(r, ["customer", "Customer"])}"`, 
-                `"${getProp(r, ["model", "Model"])}"`, 
-                `"${getProp(r, ["type", "Type"])}"`, 
-                `"${getProp(r, ["ref", "Ref"])}"`,
-                `"${getProp(r, ["capacity", "Capacity"])}"`,
-                `"${getProp(r, ["phase", "Phase"])}"`, 
-                `"${getProp(r, ["volt", "Volt"])}"`, 
-                `"${getProp(r, ["status", "Status"])}"`, 
-                `"${getProp(r, ["rated_cur", "RatedCur"])}"`,
-                `"${r.cur_a?.[0]||''}"`, `"${r.cur_a?.[1]||''}"`, `"${r.cur_a?.[2]||''}"`,
-                `"${r.cur_b?.[0]||''}"`, `"${r.cur_b?.[1]||''}"`, `"${r.cur_b?.[2]||''}"`,
-                `"${r.sys_a?.[0]||''}"`, `"${r.sys_a?.[1]||''}"`, `"${r.sys_a?.[2]||''}"`, `"${r.sys_a?.[3]||''}"`,
-                `"${r.sys_b?.[0]||''}"`, `"${r.sys_b?.[1]||''}"`, `"${r.sys_b?.[2]||''}"`, `"${r.sys_b?.[3]||''}"`,
-                `"${r.water?.[2]||''}"`, `"${r.water?.[3]||''}"`, `"${r.water?.[0]||''}"`, `"${r.water?.[1]||''}"`,
-                `"${(getProp(r, ["notes", "Notes"])).replace(/"/g, '""')}"`
-            ];
-            csvContent += row.join(",") + "\n";
+            const date = getProp(r, ['date', '日期']);
+            const customer = getProp(r, ['customer', '案場', '客戶名稱']);
+            const model = getProp(r, ['model', '機號', '型號']);
+            const type = getProp(r, ['type', '熱泵型態']);
+            const ref = getProp(r, ['ref', '冷媒種類']);
+            const status = getProp(r, ['status', '狀態']);
+            const notes = String(getProp(r, ['notes', '備註', '處置說明'])).replace(/[\n\r]+/g, " ");
+            csvContent += `"${date}","${customer}","${model}","${type}","${ref}","${status}","${notes}"\n`;
         });
-
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
-        a.setAttribute("href", url);
-        a.setAttribute("download", `碩豐熱泵戰情維修履歷_${new Date().toISOString().slice(0,10)}.csv`);
+        a.href = url;
+        a.download = `檢修履歷_${new Date().toISOString().slice(0,10)}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
     }
 </script>
+
 </body>
 </html>
